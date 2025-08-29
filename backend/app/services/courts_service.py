@@ -9,17 +9,31 @@ class CourtsService:
     async def get_courts_by_verein(self, verein_id: str) -> List[dict]:
         """Alle Plätze eines Vereins abrufen"""
         try:
+            print(f"🔍 DEBUG: Suche Plätze für Verein: {verein_id}")
+            
             response = self.supabase.table("platz").select("*").eq("verein_id", verein_id).execute()
             
+            print(f"🔍 DEBUG: Supabase Response: {response}")
+            print(f"🔍 DEBUG: Response.data: {response.data}")
+            print(f"🔍 DEBUG: Response.data type: {type(response.data)}")
+            
             if response.data:
-                print(f"DEBUG: {len(response.data)} Plätze gefunden für Verein {verein_id}")
+                print(f"✅ DEBUG: {len(response.data)} Plätze gefunden für Verein {verein_id}")
+                for court in response.data:
+                    print(f"   📋 Platz: {court.get('name')} - ID: {court.get('id')} - Verein: {court.get('verein_id')}")
                 return response.data
             else:
-                print(f"DEBUG: Keine Plätze gefunden für Verein {verein_id}")
+                print(f"❌ DEBUG: Keine Plätze gefunden für Verein {verein_id}")
+                # Zusätzliche Debug-Info: Alle Plätze abrufen
+                all_courts_response = self.supabase.table("platz").select("*").execute()
+                print(f"🔍 DEBUG: Alle vorhandenen Plätze in DB:")
+                if all_courts_response.data:
+                    for court in all_courts_response.data:
+                        print(f"   📋 DB-Platz: {court.get('name')} - Verein: {court.get('verein_id')}")
                 return []
                 
         except Exception as e:
-            print(f"ERROR beim Abrufen der Plätze: {e}")
+            print(f"❌ ERROR beim Abrufen der Plätze: {e}")
             raise ValueError(f"Fehler beim Laden der Plätze: {str(e)}")
 
     async def get_court_by_id(self, court_id: str) -> Optional[dict]:

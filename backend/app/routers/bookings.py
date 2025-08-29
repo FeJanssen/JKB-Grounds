@@ -31,7 +31,7 @@ async def get_current_user_id(request: Request, x_user_id: str = Header(None, al
 # ENTERPRISE PYDANTIC MODELS
 class BookingRequest(BaseModel):
     """Enterprise Booking Request Model"""
-    court_id: str
+    platz_id: str  # ✅ Korrigiert: platz_id (konsistent mit Datenbank)
     date: str  # YYYY-MM-DD Format
     time: str  # HH:MM Format
     duration: int  # Minuten (Standard: 60)
@@ -102,7 +102,7 @@ async def create_booking(
         
         # ENTERPRISE BOOKING DATA PREPARATION
         booking_data = {
-            "court_id": request.court_id,
+            "court_id": request.platz_id,  # ✅ Korrigiert: request.platz_id 
             "date": request.date,
             "time": request.time,
             "duration": request.duration,
