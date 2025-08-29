@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "JKB Grounds",
+    "slug": "jkb-grounds",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fejanssen.jkbgrounds",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.fejanssen.jkbgrounds"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6c1d9702-3b7c-424c-b514-c0ba0460369f"
+      }
+    },
+    "owner": "fejanssen"
+  }
+}
