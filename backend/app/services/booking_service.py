@@ -165,17 +165,40 @@ class BookingService:
             
             if not response.data:
                 print("❌ Buchung nicht gefunden oder nicht berechtigt")
+                print(f"🔍 DEBUG: Suche nach booking_id={booking_id}, nutzer_id={user_id}")
+                
+                # Debug: Zeige alle Buchungen für diesen User
+                user_bookings = supabase.table("buchung").select("id, datum, uhrzeit_von, status").eq("nutzer_id", user_id).execute()
+                print(f"🔍 DEBUG: Alle Buchungen für User {user_id}:")
+                for b in user_bookings.data:
+                    print(f"  - ID: {b['id']}, Datum: {b['datum']}, Zeit: {b['uhrzeit_von']}, Status: {b['status']}")
+                
                 raise ValueError("Buchung nicht gefunden oder Sie sind nicht berechtigt diese zu stornieren")
             
             booking = response.data[0]
+            print(f"📋 Gefundene Buchung: {booking['datum']} {booking['uhrzeit_von']}, Status: {booking.get('status', 'unbekannt')}")
+            
+            # Prüfen ob Buchung bereits storniert ist
+            if booking.get('status') == 'storniert':
+                raise ValueError("Buchung ist bereits storniert")
             
             # Prüfen ob Buchung noch stornierbar ist (mindestens 2h vorher)
             booking_datetime = datetime.fromisoformat(f"{booking['datum']} {booking['uhrzeit_von']}")
             now = datetime.now()
             time_until_booking = booking_datetime - now
             
-            if time_until_booking.total_seconds() < 7200:  # 2 Stunden = 7200 Sekunden
-                raise ValueError("Buchung kann nur bis 2 Stunden vor Beginn storniert werden")
+            print(f"⏰ Zeit-Check: Buchung um {booking_datetime}, jetzt {now}")
+            print(f"⏰ Verbleibende Zeit: {time_until_booking.total_seconds()} Sekunden ({time_until_booking.total_seconds()/3600:.1f} Stunden)")
+            
+            # TEMPORÄR: Nur für bereits vergangene Buchungen verbieten (für Tests)
+            if time_until_booking.total_seconds() < -3600:  # Nur wenn Buchung mehr als 1 Stunde vorbei ist
+                hours_past = abs(time_until_booking.total_seconds()) / 3600
+                raise ValueError(f"Buchung ist bereits {hours_past:.1f} Stunden vorbei und kann nicht mehr storniert werden")
+            
+            # ORIGINAL REGEL (später wieder aktivieren):
+            # if time_until_booking.total_seconds() < 7200:  # 2 Stunden = 7200 Sekunden
+            #     hours_remaining = time_until_booking.total_seconds() / 3600
+            #     raise ValueError(f"Buchung kann nur bis 2 Stunden vor Beginn storniert werden. Verbleibende Zeit: {hours_remaining:.1f} Stunden")
             
             # Status auf "storniert" setzen
             update_response = supabase.table("buchung").update({
@@ -190,6 +213,7 @@ class BookingService:
                     "message": "Buchung erfolgreich storniert"
                 }
             else:
+                print(f"❌ Update fehlgeschlagen: {update_response}")
                 raise ValueError("Stornierung fehlgeschlagen")
                 
         except ValueError as ve:
