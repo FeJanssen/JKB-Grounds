@@ -122,7 +122,7 @@ const ConfiguratorScreen = () => {
       await Promise.all([
         loadCourtsByVereinId(vereinId),
         loadRoles(),
-        loadPermissions()
+        loadPermissionsByVereinId(vereinId)
       ]);
       
       console.log('✅ Alle Daten geladen');
@@ -221,15 +221,15 @@ const ConfiguratorScreen = () => {
     }
   };
 
-  const loadPermissions = async () => {
+  const loadPermissionsByVereinId = async (vereinId) => {
     try {
-      console.log('🔐 Lade Berechtigungen...');
+      console.log('🔐 Lade Berechtigungen für Verein:', vereinId);
       
-      if (!currentVereinId) {
+      if (!vereinId) {
         throw new Error('Keine Verein-ID verfügbar');
       }
       
-      const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/permissions/verein/${currentVereinId}`);
+      const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/permissions/verein/${vereinId}`);
       
       console.log('📡 Permissions API Response Status:', response.status);
       
@@ -243,17 +243,30 @@ const ConfiguratorScreen = () => {
         } else if (data.permissions && Array.isArray(data.permissions)) {
           setPermissions(data.permissions);
           console.log('✅ Berechtigungen aus data.permissions geladen:', data.permissions.length);
+        } else if (data.data && Array.isArray(data.data)) {
+          setPermissions(data.data);
+          console.log('✅ Berechtigungen aus data.data geladen:', data.data.length);
         } else {
-          console.log('⚠️ Unerwartete Permissions-Struktur, setze leeres Array');
+          console.log('⚠️ Unerwartete Permissions-Struktur:', data);
           setPermissions([]);
         }
       } else {
         console.log('❌ Permissions API Fehler:', response.status);
+        const errorText = await response.text();
+        console.log('❌ Error details:', errorText);
         setPermissions([]);
       }
     } catch (error) {
       console.error('❌ Fehler beim Laden der Berechtigungen:', error);
       setPermissions([]);
+    }
+  };
+
+  const loadPermissions = async () => {
+    if (currentVereinId) {
+      await loadPermissionsByVereinId(currentVereinId);
+    } else {
+      console.log('⚠️ Keine Verein-ID verfügbar für loadPermissions');
     }
   };
 
