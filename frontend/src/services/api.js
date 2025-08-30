@@ -1,11 +1,6 @@
 const API_BASE_URL = 'https://jkb-grounds-production.up.railway.app/api/auth';
 const API_MAIN_URL = 'https://jkb-grounds-production.up.railway.app/api';
 
-// TODO: Diese URLs sollten aus einer zentralen Config kommen
-// import { API_CONFIG } from '../config/api.js';
-// const API_BASE_URL = `${API_CONFIG.BASE_URL}/api/auth`;
-// const API_MAIN_URL = `${API_CONFIG.BASE_URL}/api`;
-
 class ApiService {
   // Hilfsfunktion um User-ID zu holen
   // Hilfsfunktion um User-ID zu holen
