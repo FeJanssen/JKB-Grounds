@@ -193,7 +193,7 @@ const ConfiguratorScreen = () => {
   const loadRoles = async () => {
     try {
       console.log('👥 Lade Rollen...');
-      const response = await fetch('https://jkb-grounds-production.up.railway.app/api/roles');
+      const response = await fetch('https://jkb-grounds-production.up.railway.app/api/roles/');
       
       console.log('📡 Roles API Response Status:', response.status);
       
