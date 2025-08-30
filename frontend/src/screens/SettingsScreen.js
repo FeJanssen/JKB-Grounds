@@ -160,22 +160,47 @@ const SettingsScreen = ({ changeTab }) => {
 
   const confirmCancelBooking = async (bookingId) => {
     try {
+      console.log('🗑️ Storniere Buchung:', bookingId);
+      
+      // User-ID für Authentifizierung holen
+      const userId = userProfile.id;
+      if (!userId) {
+        Alert.alert('Fehler', 'Keine Benutzer-ID verfügbar. Bitte melde dich erneut an.');
+        return;
+      }
+      
       const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/bookings/${bookingId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'X-User-ID': userId
         }
       });
 
+      console.log('📡 Cancel Response Status:', response.status);
+      
       if (response.ok) {
-        Alert.alert('Erfolg', 'Buchung wurde storniert.');
-        loadUserData();
+        const result = await response.json();
+        console.log('✅ Stornierung erfolgreich:', result);
+        Alert.alert('Erfolg', 'Buchung wurde erfolgreich storniert.');
+        
+        // Reload user data to update the bookings list
+        await loadUserData();
       } else {
-        Alert.alert('Fehler', 'Buchung konnte nicht storniert werden.');
+        const errorData = await response.text();
+        console.error('❌ Stornierung fehlgeschlagen:', response.status, errorData);
+        
+        if (response.status === 404) {
+          Alert.alert('Fehler', 'Buchung wurde nicht gefunden.');
+        } else if (response.status === 403) {
+          Alert.alert('Fehler', 'Sie haben keine Berechtigung, diese Buchung zu stornieren.');
+        } else {
+          Alert.alert('Fehler', 'Buchung konnte nicht storniert werden. Bitte versuchen Sie es später erneut.');
+        }
       }
     } catch (error) {
-      console.error('Fehler beim Stornieren:', error);
-      Alert.alert('Fehler', 'Verbindungsfehler beim Stornieren.');
+      console.error('❌ Fehler beim Stornieren:', error);
+      Alert.alert('Fehler', 'Verbindungsfehler beim Stornieren. Bitte überprüfen Sie Ihre Internetverbindung.');
     }
   };
 
