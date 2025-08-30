@@ -92,30 +92,10 @@ const CRMScreen = () => {
       console.error('❌ Fehler beim Laden der CRM-Daten:', error);
       Alert.alert('Fehler', 'CRM-Daten konnten nicht geladen werden: ' + error.message);
       
-      // Fallback zu Demo-Daten bei Fehler
-      const demoUsers = [
-        {
-          id: '1',
-          vorname: 'Max',
-          nachname: 'Mustermann',
-          email: 'max@example.com',
-          passwort: '••••••••',
-          geschlecht: 'männlich',
-          rolle: 'Admin'
-        },
-        {
-          id: '2',
-          vorname: 'Anna',
-          nachname: 'Schmidt',
-          email: 'anna@example.com',
-          passwort: '••••••••',
-          geschlecht: 'weiblich',
-          rolle: 'Trainer'
-        }
-      ];
-      setUsers(demoUsers);
+      // Leere Arrays als Fallback - keine hardcodierten Demo-Daten
+      setUsers([]);
       setPendingRegistrations([]);
-      setStats({ total: demoUsers.length, pending: 0 });
+      setStats({ total: 0, pending: 0 });
       setRoles([
         { id: 1, name: 'Admin' },
         { id: 2, name: 'Trainer' },

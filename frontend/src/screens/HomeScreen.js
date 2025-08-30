@@ -9,6 +9,7 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const HomeScreen = ({ changeTab }) => {
   const [loading, setLoading] = useState(true);
@@ -18,43 +19,75 @@ const HomeScreen = ({ changeTab }) => {
     totalCourts: 0,
     todayBookings: []
   });
+  const [vereinId, setVereinId] = useState(null);
 
   useEffect(() => {
-    loadDashboardData();
+    initializeHomeScreen();
     
     // Aktualisiere alle 30 Sekunden
     const interval = setInterval(loadDashboardData, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  const loadDashboardData = async () => {
+  const initializeHomeScreen = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      console.log('Lade Dashboard-Daten für:', today);
+      // Lade Verein-ID aus AsyncStorage
+      const storedVereinId = await AsyncStorage.getItem('verein_id');
+      if (!storedVereinId) {
+        throw new Error('Keine Verein-ID gefunden');
+      }
       
-      // Parallel laden: Heutige Buchungen und alle Plätze
+      setVereinId(storedVereinId);
+      console.log('🏠 HomeScreen: Verein-ID geladen:', storedVereinId);
+      
+      // Lade Dashboard-Daten für diese Verein-ID
+      await loadDashboardData(storedVereinId);
+      
+    } catch (error) {
+      console.error('❌ HomeScreen Initialisierung fehlgeschlagen:', error);
+      Alert.alert('Fehler', 'Dashboard konnte nicht initialisiert werden');
+    }
+  };
+
+  const loadDashboardData = async (currentVereinId = null) => {
+    try {
+      const useVereinId = currentVereinId || vereinId;
+      if (!useVereinId) {
+        console.log('⚠️ Keine Verein-ID verfügbar, überspringe Dashboard-Laden');
+        return;
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      console.log('🔄 Lade Dashboard-Daten für:', today, 'Verein:', useVereinId);
+      
+      // Parallel laden: Heutige Buchungen und alle Plätze für den Verein
       const [todayBookingsRes, courtsRes] = await Promise.all([
-        fetch(`https://jkb-grounds-production.up.railway.app/api/bookings/date/${today}?verein_id=fab28464-e42a-4e6e-b314-37eea1e589e6`),
-        fetch('https://jkb-grounds-production.up.railway.app/api/courts')
+        fetch(`https://jkb-grounds-production.up.railway.app/api/bookings/date/${today}?verein_id=${useVereinId}`),
+        fetch(`https://jkb-grounds-production.up.railway.app/api/courts/verein/${useVereinId}`)
       ]);
 
       const todayBookings = todayBookingsRes.ok ? await todayBookingsRes.json() : { bookings: [] };
-      const courts = courtsRes.ok ? await courtsRes.json() : { courts: [] };
+      const courtsResponse = courtsRes.ok ? await courtsRes.json() : { courts: [] };
+      
+      // Handle verschiedene API-Response-Formate
+      const courts = courtsResponse.courts || courtsResponse.data || [];
 
-      console.log('Heutige Buchungen:', todayBookings.bookings?.length || 0);
-      console.log('Verfügbare Plätze:', courts.courts?.length || 0);
+      console.log('📊 Dashboard geladen:', {
+        buchungen: todayBookings.bookings?.length || 0,
+        plätze: courts.length || 0
+      });
 
       // Berechne verfügbare Plätze jetzt
-      const availableNow = calculateAvailableNow(courts.courts || [], todayBookings.bookings || []);
+      const availableNow = calculateAvailableNow(courts || [], todayBookings.bookings || []);
 
       setDashboardData({
         availableNow: availableNow,
-        totalCourts: courts.courts?.length || 0,
+        totalCourts: courts.length || 0,
         todayBookings: todayBookings.bookings || []
       });
 
     } catch (error) {
-      console.error('Fehler beim Laden der Dashboard-Daten:', error);
+      console.error('❌ Fehler beim Laden der Dashboard-Daten:', error);
       Alert.alert(
         'Verbindungsfehler',
         'Dashboard-Daten konnten nicht geladen werden.',
