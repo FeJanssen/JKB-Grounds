@@ -116,10 +116,11 @@ const ConfiguratorScreen = () => {
       console.log('🔄 Lade Konfigurator-Daten...');
       
       // Erst User-Daten laden, dann Rest
-      await loadUserData();
+      const vereinId = await loadUserData();
       
+      // Jetzt mit der geladenen Verein-ID die anderen Daten laden
       await Promise.all([
-        loadCourts(),
+        loadCourtsByVereinId(vereinId),
         loadRoles(),
         loadPermissions()
       ]);
@@ -140,15 +141,15 @@ const ConfiguratorScreen = () => {
     setRefreshing(false);
   };
 
-  const loadCourts = async () => {
+  const loadCourtsByVereinId = async (vereinId) => {
     try {
-      console.log('🎾 Lade Plätze...');
+      console.log('🎾 Lade Plätze für Verein:', vereinId);
       
-      if (!currentVereinId) {
+      if (!vereinId) {
         throw new Error('Keine Verein-ID verfügbar');
       }
       
-      const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/courts/verein/${currentVereinId}`);
+      const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/courts/verein/${vereinId}`);
       
       console.log('📡 Courts API Response Status:', response.status);
       
@@ -162,17 +163,30 @@ const ConfiguratorScreen = () => {
         } else if (data.courts && Array.isArray(data.courts)) {
           setCourts(data.courts);
           console.log('✅ Plätze aus data.courts geladen:', data.courts.length);
+        } else if (data.data && Array.isArray(data.data)) {
+          setCourts(data.data);
+          console.log('✅ Plätze aus data.data geladen:', data.data.length);
         } else {
-          console.log('⚠️ Unerwartete Courts-Struktur, setze leeres Array');
+          console.log('⚠️ Unerwartete Courts-Struktur:', data);
           setCourts([]);
         }
       } else {
         console.log('❌ Courts API Fehler:', response.status);
+        const errorText = await response.text();
+        console.log('❌ Error details:', errorText);
         setCourts([]);
       }
     } catch (error) {
       console.error('❌ Fehler beim Laden der Plätze:', error);
       setCourts([]);
+    }
+  };
+
+  const loadCourts = async () => {
+    if (currentVereinId) {
+      await loadCourtsByVereinId(currentVereinId);
+    } else {
+      console.log('⚠️ Keine Verein-ID verfügbar für loadCourts');
     }
   };
 
@@ -306,6 +320,11 @@ const ConfiguratorScreen = () => {
         return;
       }
       
+      if (!currentUserId) {
+        Alert.alert('Fehler', 'Keine User-ID verfügbar');
+        return;
+      }
+      
       const courtData = {
         ...courtForm,
         verein_id: currentVereinId
@@ -317,11 +336,18 @@ const ConfiguratorScreen = () => {
       
       const method = editingCourt ? 'PUT' : 'POST';
 
+      console.log('💾 Speichere Platz:', {
+        method,
+        url,
+        courtData,
+        userId: currentUserId
+      });
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'X-User-ID': '626093ad-1de3-454f-af72-fd38030613f7'
+          'X-User-ID': currentUserId
         },
         body: JSON.stringify(courtData)
       });
@@ -336,13 +362,15 @@ const ConfiguratorScreen = () => {
         setModalVisible(false);
         loadCourts();
       } else {
-        throw new Error('Fehler beim Speichern');
+        const errorText = await response.text();
+        console.log('❌ Save Court Error:', response.status, errorText);
+        throw new Error(`Fehler beim Speichern: ${response.status}`);
       }
     } catch (error) {
       if (Platform.OS === 'web') {
-        window.alert('Platz konnte nicht gespeichert werden');
+        window.alert('Platz konnte nicht gespeichert werden: ' + error.message);
       } else {
-        Alert.alert('Fehler', 'Platz konnte nicht gespeichert werden');
+        Alert.alert('Fehler', 'Platz konnte nicht gespeichert werden: ' + error.message);
       }
       
       console.error('❌ Fehler beim Speichern:', error);
@@ -388,10 +416,15 @@ const ConfiguratorScreen = () => {
     try {
       console.log('🔄 Sende DELETE-Request für:', platzId);
       
+      if (!currentUserId) {
+        Alert.alert('Fehler', 'Keine User-ID verfügbar');
+        return;
+      }
+      
       const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/courts/${platzId}`, {
         method: 'DELETE',
         headers: {
-          'X-User-ID': '626093ad-1de3-454f-af72-fd38030613f7'
+          'X-User-ID': currentUserId
         }
       });
 
