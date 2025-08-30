@@ -162,12 +162,27 @@ const SettingsScreen = ({ changeTab }) => {
     try {
       console.log('🗑️ Storniere Buchung:', bookingId);
       
-      // User-ID für Authentifizierung holen
-      const userId = userProfile.id;
+      // AsyncStorage importieren
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      
+      // User-ID für Authentifizierung holen - verschiedene Quellen versuchen
+      let userId = userProfile.id;
+      
       if (!userId) {
+        // Versuche aus AsyncStorage
+        userId = await AsyncStorage.getItem('userId') || 
+                 await AsyncStorage.getItem('user_id') || 
+                 await AsyncStorage.getItem('nutzer_id');
+      }
+      
+      if (!userId) {
+        const allKeys = await AsyncStorage.getAllKeys();
+        console.error('❌ Keine User-ID verfügbar in:', { userProfile, AsyncStorageKeys: allKeys });
         Alert.alert('Fehler', 'Keine Benutzer-ID verfügbar. Bitte melde dich erneut an.');
         return;
       }
+      
+      console.log('👤 Verwende User-ID für Stornierung:', userId);
       
       const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/bookings/${bookingId}`, {
         method: 'DELETE',
@@ -178,6 +193,7 @@ const SettingsScreen = ({ changeTab }) => {
       });
 
       console.log('📡 Cancel Response Status:', response.status);
+      console.log('📡 Cancel Response Headers:', Object.fromEntries(response.headers.entries()));
       
       if (response.ok) {
         const result = await response.json();
@@ -190,16 +206,27 @@ const SettingsScreen = ({ changeTab }) => {
         const errorData = await response.text();
         console.error('❌ Stornierung fehlgeschlagen:', response.status, errorData);
         
+        try {
+          const errorJson = JSON.parse(errorData);
+          console.log('📋 Detaillierte Fehlerinfo:', errorJson);
+        } catch (e) {
+          console.log('📋 Fehlertext (nicht JSON):', errorData);
+        }
+        
         if (response.status === 404) {
           Alert.alert('Fehler', 'Buchung wurde nicht gefunden.');
+        } else if (response.status === 401) {
+          Alert.alert('Fehler', 'Authentifizierung fehlgeschlagen. Bitte melde dich erneut an.');
         } else if (response.status === 403) {
           Alert.alert('Fehler', 'Sie haben keine Berechtigung, diese Buchung zu stornieren.');
+        } else if (response.status === 400) {
+          Alert.alert('Fehler', 'Buchung kann nicht storniert werden (möglicherweise zu spät).');
         } else {
-          Alert.alert('Fehler', 'Buchung konnte nicht storniert werden. Bitte versuchen Sie es später erneut.');
+          Alert.alert('Fehler', `Buchung konnte nicht storniert werden (${response.status}). Bitte versuchen Sie es später erneut.`);
         }
       }
     } catch (error) {
-      console.error('❌ Fehler beim Stornieren:', error);
+      console.error('❌ Exception beim Stornieren:', error);
       Alert.alert('Fehler', 'Verbindungsfehler beim Stornieren. Bitte überprüfen Sie Ihre Internetverbindung.');
     }
   };
