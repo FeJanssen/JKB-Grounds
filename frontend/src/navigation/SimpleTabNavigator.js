@@ -191,21 +191,10 @@ const SimpleTabNavigator = () => {
 
   return (
     <View style={styles.container} key={renderKey}>
-      {/* WEB-SPEZIFISCHE LÖSUNG: ScrollView für Web, View für Mobile */}
-      {Platform.OS === 'web' ? (
-        <ScrollView 
-          style={styles.webContent} 
-          contentContainerStyle={styles.webContentContainer}
-          testID="tab-content"
-          showsVerticalScrollIndicator={true}
-        >
-          {renderScreen()}
-        </ScrollView>
-      ) : (
-        <View style={styles.content} testID="tab-content">
-          {renderScreen()}
-        </View>
-      )}
+      {/* CONTENT - Kein ScrollView hier, die Screens handhaben ihr eigenes Scrolling */}
+      <View style={styles.content} testID="tab-content">
+        {renderScreen()}
+      </View>
       
       <View style={styles.tabBar}>
         <View style={styles.tabBarInner}>
@@ -257,14 +246,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-  },
-  webContent: {
-    flex: 1,
-    height: '100vh',
-  },
-  webContentContainer: {
-    paddingBottom: 100, // Platz für Tab Bar
-    minHeight: '100vh',
+    paddingBottom: 90, // Platz für Tab Bar
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -276,7 +258,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tabBar: {
-    position: 'fixed', // ← WEB: fixed statt absolute für bessere Performance
+    position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
@@ -293,7 +275,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: 'rgba(0,0,0,0.05)',
     minHeight: 70,
-    zIndex: 9999, // ← ERHÖHT für Web
+    zIndex: 999,
   },
   tabBarInner: {
     flexDirection: 'row',
