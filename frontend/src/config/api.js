@@ -1,13 +1,13 @@
 // API Konfiguration für Multi-Tenant App
 const API_CONFIG = {
-  // 🚀 PRODUCTION URL (Railway) - DYNAMISCH per Environment
-  BASE_URL: process.env.REACT_APP_API_URL || 'https://jkb-grounds-production.up.railway.app', 
+  // � PRODUCTION URL (AWS Lambda) - Für TestFlight/Production:
+  BASE_URL: process.env.REACT_APP_API_URL || 'https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws',
   
-  // Für lokale Entwicklung:
-  // BASE_URL: 'http://127.0.0.1:8000',
+  // 🏠 LOKALE ENTWICKLUNG (Port 8001)
+  // BASE_URL: process.env.REACT_APP_API_URL || 'http://localhost:8001',
   
-  // Für lokales Netzwerk (gleiche WiFi):
-  // BASE_URL: 'http://192.168.1.XXX:8000', // ← Deine lokale IP
+  // � LOKALES NETZWERK TESTING (gleiche WiFi)
+  // BASE_URL: process.env.REACT_APP_API_URL || 'http://192.168.178.27:8001',
   
   // TIMEOUT SETTINGS
   TIMEOUT: 10000, // 10 Sekunden
