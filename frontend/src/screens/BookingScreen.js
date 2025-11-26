@@ -432,11 +432,14 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
   },
-  // ✅ WEB-KOMPATIBLES SCROLLING - Wie SettingsScreen
+  // ✅ WEB-KOMPATIBLES SCROLLING - EXAKT wie SettingsScreen
   scrollableContent: {
     flex: 1,
     padding: 20,
-    paddingBottom: 120, // Mehr Platz für Tab Bar
+    paddingBottom: 100,     // ✅ Platz für Bottom Tab Bar
+    height: '70vh',         // ✅ Feste Höhe für Web
+    overflow: 'auto',       // ✅ Eigenes Scrolling
+    maxHeight: '90vh',      // ✅ Max-Height Begrenzung
   },
   subtitle: {
     fontSize: 16,
