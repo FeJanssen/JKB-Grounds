@@ -344,11 +344,10 @@ const CRMScreen = () => {
         <Text style={styles.headerTitle}>CRM System</Text>
       </View>
 
-      {/* CONTENT - WEB-KOMPATIBLES SCROLLING */}
+      {/* CONTENT - WEB-KOMPATIBLES SCROLLING - Einfache ScrollView wie SettingsScreen */}
       <ScrollView 
         style={styles.scrollableContent}
-        contentContainerStyle={styles.scrollContentContainer}
-        showsVerticalScrollIndicator={Platform.OS === 'web'}
+        showsVerticalScrollIndicator={false}
         testID="crm-screen"
       >
         
@@ -913,14 +912,11 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 
-  // CONTENT - WEB-KOMPATIBLES SCROLLING
+  // CONTENT - WEB-KOMPATIBLES SCROLLING - Wie SettingsScreen
   scrollableContent: {
     flex: 1,
-  },
-  scrollContentContainer: {
     padding: 20,
     paddingBottom: 120, // Mehr Platz für Tab Bar
-    flexGrow: 1, // Für korrektes Scrolling
   },
 
   // EMPTY STATE

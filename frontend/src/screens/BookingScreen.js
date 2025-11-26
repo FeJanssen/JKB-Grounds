@@ -270,11 +270,10 @@ const BookingScreen = ({ navigation }) => {
 
       {/* ✅ CONTENT - MIT ScrollView für korrekte Web-Scroll-Behandlung */}
       {viewMode === 'calendar' ? (
-        // KALENDER-ANSICHT - ScrollView für Web-Kompatibilität
+        // KALENDER-ANSICHT - Einfache ScrollView wie SettingsScreen
         <ScrollView 
           style={styles.scrollableContent}
-          contentContainerStyle={styles.scrollContentContainer}
-          showsVerticalScrollIndicator={Platform.OS === 'web'}
+          showsVerticalScrollIndicator={false}
         >
           <BookingCalendar 
             courts={courts} 
@@ -285,11 +284,10 @@ const BookingScreen = ({ navigation }) => {
           />
         </ScrollView>
       ) : (
-        // ✅ LISTEN-ANSICHT - ScrollView für Web-Kompatibilität  
+        // ✅ LISTEN-ANSICHT - Einfache ScrollView wie SettingsScreen
         <ScrollView 
           style={styles.scrollableContent}
-          contentContainerStyle={styles.scrollContentContainer}
-          showsVerticalScrollIndicator={Platform.OS === 'web'}
+          showsVerticalScrollIndicator={false}
         >
           <Text style={styles.subtitle}>
             {courts.length > 0 
@@ -434,14 +432,11 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
   },
-  // ✅ WEB-KOMPATIBLES SCROLLING
+  // ✅ WEB-KOMPATIBLES SCROLLING - Wie SettingsScreen
   scrollableContent: {
     flex: 1,
-  },
-  scrollContentContainer: {
     padding: 20,
     paddingBottom: 120, // Mehr Platz für Tab Bar
-    flexGrow: 1, // Für korrektes Scrolling
   },
   subtitle: {
     fontSize: 16,
