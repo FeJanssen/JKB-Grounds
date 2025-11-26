@@ -2,7 +2,9 @@
 export const APP_CONFIG = {
   // API Configuration
   API: {
-    BASE_URL: process.env.REACT_APP_API_URL || 'https://jkb-grounds-production.up.railway.app',
+    // Import aus api.js Config für einheitliche Verwaltung
+    // Diese Config wird durch ../config/api.js definiert
+    BASE_URL: process.env.REACT_APP_API_URL || 'https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws',
     TIMEOUT: 10000,
     MAX_RETRIES: 3,
   },

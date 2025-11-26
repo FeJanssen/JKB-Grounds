@@ -7,7 +7,11 @@ try {
   AsyncStorage = null;
 }
 
-const API_BASE_URL = 'https://jkb-grounds-production.up.railway.app/api/crm';
+// Import API Config für einheitliche URL-Verwaltung
+import { API_CONFIG } from '../config/api.js';
+
+// CRM API URL basierend auf der zentralen Konfiguration
+const API_BASE_URL = `${API_CONFIG.BASE_URL}/api/crm`;
 
 const getHeaders = async () => {
   try {
