@@ -12,6 +12,7 @@ import {
   Modal,
 } from 'react-native';
 import { useUser } from '../context/UserContext';
+import { API_BASE_URL } from '../config/baseUrl';
 
 const SettingsScreen = ({ changeTab }) => {
   const [loading, setLoading] = useState(true);
@@ -74,7 +75,7 @@ const SettingsScreen = ({ changeTab }) => {
   const loadUserProfile = async (userId) => {
     try {
       console.log('Lade Profil für User:', userId);
-      const response = await fetch(`http://localhost:8001/api/users/${userId}`);
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -103,7 +104,7 @@ const SettingsScreen = ({ changeTab }) => {
       const today = new Date().toISOString().split('T')[0];
       console.log('🔍 Lade Buchungen für User:', userId, 'ab:', today);
       
-      const response = await fetch(`http://localhost:8001/api/users/${userId}/bookings?from_date=${today}`);
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}/bookings?from_date=${today}`);
       
       console.log('📡 Response Status:', response.status);
       
@@ -185,7 +186,7 @@ const SettingsScreen = ({ changeTab }) => {
       
       console.log('👤 Verwende User-ID für Stornierung:', userId);
       
-      const response = await fetch(`http://localhost:8001/api/bookings/${bookingId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -273,7 +274,7 @@ const SettingsScreen = ({ changeTab }) => {
 
       console.log('Sende Update:', updateData);
 
-      const response = await fetch(`http://localhost:8001/api/users/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

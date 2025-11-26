@@ -13,6 +13,7 @@ import {
   Platform,
   RefreshControl,
 } from 'react-native';
+import { API_BASE_URL } from '../config/baseUrl';
 
 const ConfiguratorScreen = () => {
   const [activeTab, setActiveTab] = useState('courts');
@@ -85,7 +86,7 @@ const ConfiguratorScreen = () => {
       console.log('👤 Konfigurator: User-ID geladen:', userId);
       
       // User-Daten laden um Verein-ID zu bekommen
-      const userResponse = await fetch(`http://localhost:8001/api/auth/auth/user/${userId}`);
+      const userResponse = await fetch(`${API_BASE_URL}/api/auth/auth/user/${userId}`);
       if (!userResponse.ok) {
         throw new Error('User-Daten konnten nicht geladen werden');
       }
@@ -149,7 +150,7 @@ const ConfiguratorScreen = () => {
         throw new Error('Keine Verein-ID verfügbar');
       }
       
-      const response = await fetch(`http://localhost:8001/api/courts/verein/${vereinId}`);
+      const response = await fetch(`${API_BASE_URL}/api/courts/verein/${vereinId}`);
       
       console.log('📡 Courts API Response Status:', response.status);
       
@@ -193,7 +194,7 @@ const ConfiguratorScreen = () => {
   const loadRoles = async () => {
     try {
       console.log('👥 Lade Rollen...');
-      const response = await fetch('http://localhost:8001/api/roles/');
+      const response = await fetch(`${API_BASE_URL}/api/roles/`);
       
       console.log('📡 Roles API Response Status:', response.status);
       
@@ -229,7 +230,7 @@ const ConfiguratorScreen = () => {
         throw new Error('Keine Verein-ID verfügbar');
       }
       
-      const response = await fetch(`http://localhost:8001/api/permissions/verein/${vereinId}`);
+      const response = await fetch(`${API_BASE_URL}/api/permissions/verein/${vereinId}`);
       
       console.log('📡 Permissions API Response Status:', response.status);
       
@@ -343,11 +344,9 @@ const ConfiguratorScreen = () => {
         verein_id: currentVereinId
       };
 
-      const url = editingCourt 
-        ? `http://localhost:8001/api/courts/${editingCourt.id}`
-        : 'http://localhost:8001/api/courts';
-      
-      const method = editingCourt ? 'PUT' : 'POST';
+      const url = editingCourt
+        ? `${API_BASE_URL}/api/courts/${editingCourt.id}`
+        : `${API_BASE_URL}/api/courts`;      const method = editingCourt ? 'PUT' : 'POST';
 
       console.log('💾 Speichere Platz:', {
         method,
@@ -434,7 +433,7 @@ const ConfiguratorScreen = () => {
         return;
       }
       
-      const response = await fetch(`http://localhost:8001/api/courts/${platzId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/courts/${platzId}`, {
         method: 'DELETE',
         headers: {
           'X-User-ID': currentUserId
@@ -497,7 +496,7 @@ const ConfiguratorScreen = () => {
       
       console.log('🔄 Toggle Berechtigung Request:', payload);
       
-      const response = await fetch('http://localhost:8001/api/permissions/toggle', {
+      const response = await fetch(`${API_BASE_URL}/api/permissions/toggle`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

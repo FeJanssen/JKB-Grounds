@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../config/baseUrl';
 
 const PermissionContext = createContext();
 
@@ -41,7 +42,7 @@ export const PermissionProvider = ({ children }) => {
       console.log('👤 STEP 2: User-ID gefunden:', userId);
 
       // SCHRITT 2: User-Daten laden
-      const userResponse = await fetch(`http://localhost:8001/api/auth/auth/user/${userId}`);
+      const userResponse = await fetch(`${API_BASE_URL}/api/auth/auth/user/${userId}`);
       
       if (!userResponse.ok) {
         throw new Error(`User-API Fehler: ${userResponse.status}`);
@@ -58,7 +59,7 @@ export const PermissionProvider = ({ children }) => {
       console.log(`🔐 STEP 4: Lade Rechte für Verein: ${userData.verein_id}, Rolle: ${userData.rolle_id}`);
       
       const rechteResponse = await fetch(
-        `http://localhost:8001/api/permissions/rechte/${userData.verein_id}/${userData.rolle_id}`
+        `${API_BASE_URL}/api/permissions/rechte/${userData.verein_id}/${userData.rolle_id}`
       );
       
       if (!rechteResponse.ok) {
