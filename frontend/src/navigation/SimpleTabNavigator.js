@@ -258,12 +258,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tabBar: {
-    position: 'absolute',
+    position: Platform.OS === 'web' ? 'fixed' : 'absolute', // ← Web: fixed, Mobile: absolute
     bottom: 0,
     left: 0,
     right: 0,
     backgroundColor: '#fff',
-    paddingBottom: Platform.OS === 'web' ? 8 : 0,
+    paddingBottom: Platform.OS === 'web' ? 12 : 0, // ← Etwas mehr Padding für Web
     paddingTop: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: 'rgba(0,0,0,0.05)',
     minHeight: 70,
-    zIndex: 999,
+    zIndex: 9999, // ← Höherer Z-Index für Web
   },
   tabBarInner: {
     flexDirection: 'row',
