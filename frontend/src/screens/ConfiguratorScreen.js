@@ -555,11 +555,10 @@ const ConfiguratorScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* ✅ WEB-KOMPATIBLES SCROLLING - mit ScrollView */}
+      {/* ✅ WEB-KOMPATIBLES SCROLLING - Einfache ScrollView wie SettingsScreen */}
       <ScrollView 
         style={styles.scrollableContent}
-        contentContainerStyle={styles.scrollContentContainer}
-        showsVerticalScrollIndicator={Platform.OS === 'web'}
+        showsVerticalScrollIndicator={false}
         testID="configurator-screen"
       >
         {activeTab === 'courts' ? (
@@ -835,14 +834,11 @@ const styles = StyleSheet.create({
   activeTabButtonText: {
     color: '#fff',
   },
-  // ✅ WEB-KOMPATIBLES SCROLLING
+  // ✅ WEB-KOMPATIBLES SCROLLING - Wie SettingsScreen  
   scrollableContent: {
     flex: 1,
-  },
-  scrollContentContainer: {
     padding: 20,
     paddingBottom: 120, // Mehr Platz für Tab Bar
-    flexGrow: 1, // Für korrektes Scrolling
   },
   errorContainer: {
     flex: 1,

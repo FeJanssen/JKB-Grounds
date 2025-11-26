@@ -1,0 +1,41 @@
+/* WEB-SPEZIFISCHE CSS FIXES FÜR SCROLLING */
+
+/* Tab Navigator Content */
+[data-testid="tab-content"], 
+.tab-content {
+  overflow-y: auto;
+  height: 100vh;
+  padding-bottom: 100px;
+}
+
+/* ScrollViews in React Native Web */
+[data-testid="RNE__LISTITEM__padView"],
+[data-testid="scroll-view"] {
+  overflow-y: auto !important;
+  max-height: 80vh !important;
+}
+
+/* Screen Content */
+.booking-content,
+.crm-content,
+.configurator-content {
+  overflow-y: auto !important;
+  max-height: calc(100vh - 200px) !important;
+}
+
+/* Force scrolling für alle Container */
+body, html {
+  overflow-y: auto !important;
+}
+
+/* React Native Web ScrollView Fix */
+div[style*="overflow: hidden"] {
+  overflow-y: auto !important;
+}
+
+/* Spezifische Fixes für CRM und Konfigurator */
+[data-testid="crm-screen"],
+[data-testid="configurator-screen"] {
+  overflow-y: auto !important;
+  height: calc(100vh - 150px) !important;
+}
