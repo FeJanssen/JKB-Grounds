@@ -11,6 +11,7 @@ import {
   Modal,
   StatusBar,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { crmService } from '../services/crmService'; // ← Backend Service importieren
@@ -344,7 +345,12 @@ const CRMScreen = () => {
       </View>
 
       {/* CONTENT - WEB-KOMPATIBLES SCROLLING */}
-      <View style={styles.content} testID="crm-screen">
+      <ScrollView 
+        style={styles.scrollableContent}
+        contentContainerStyle={styles.scrollContentContainer}
+        showsVerticalScrollIndicator={Platform.OS === 'web'}
+        testID="crm-screen"
+      >
         
         {/* SUCHFUNKTION */}
         <View style={styles.searchContainer}>
@@ -496,7 +502,7 @@ const CRMScreen = () => {
             ))
           )}
         </View>
-      </View>
+      </ScrollView>
 
       {/* PERSON HINZUFÜGEN MODAL */}
       <Modal
@@ -908,10 +914,12 @@ const styles = StyleSheet.create({
   },
 
   // CONTENT - WEB-KOMPATIBLES SCROLLING
-  content: {
+  scrollableContent: {
+    flex: 1,
+  },
+  scrollContentContainer: {
     padding: 20,
-    minHeight: '200vh', // ✅ WEB: Genug Höhe um Scrolling zu erzwingen
-    overflow: 'visible', // ✅ WEB: Erlaube Overflow
+    paddingBottom: 50, // Extra Platz am Ende
   },
 
   // EMPTY STATE

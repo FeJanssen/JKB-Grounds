@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   ScrollView,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BookingCalendar from '../components/BookingCalender';
@@ -267,10 +268,14 @@ const BookingScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* ✅ CONTENT - OHNE ScrollView, da Tab Navigator scrollt */}
+      {/* ✅ CONTENT - MIT ScrollView für korrekte Web-Scroll-Behandlung */}
       {viewMode === 'calendar' ? (
-        // KALENDER-ANSICHT - nur ein View Container
-        <View style={styles.simpleContent}>
+        // KALENDER-ANSICHT - ScrollView für Web-Kompatibilität
+        <ScrollView 
+          style={styles.scrollableContent}
+          contentContainerStyle={styles.scrollContentContainer}
+          showsVerticalScrollIndicator={Platform.OS === 'web'}
+        >
           <BookingCalendar 
             courts={courts} 
             onBooking={handleBooking}
@@ -278,10 +283,14 @@ const BookingScreen = ({ navigation }) => {
             vereinId={currentVereinId}
             userId={currentUserId}  // ✅ User-ID weiterleiten
           />
-        </View>
+        </ScrollView>
       ) : (
-        // ✅ LISTEN-ANSICHT - nur ein View Container
-        <View style={styles.simpleContent}>
+        // ✅ LISTEN-ANSICHT - ScrollView für Web-Kompatibilität  
+        <ScrollView 
+          style={styles.scrollableContent}
+          contentContainerStyle={styles.scrollContentContainer}
+          showsVerticalScrollIndicator={Platform.OS === 'web'}
+        >
           <Text style={styles.subtitle}>
             {courts.length > 0 
               ? `${courts.length} Plätze verfügbar` 
@@ -352,7 +361,7 @@ const BookingScreen = ({ navigation }) => {
               <Text style={styles.switchButtonText}>Zu Kalender wechseln</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </ScrollView>
       )}
     </View>
   );
@@ -426,10 +435,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   // ✅ WEB-KOMPATIBLES SCROLLING
-  simpleContent: {
+  scrollableContent: {
+    flex: 1,
+  },
+  scrollContentContainer: {
     padding: 20,
-    minHeight: '200vh', // ✅ WEB: Genug Höhe um Scrolling zu erzwingen
-    overflow: 'visible', // ✅ WEB: Erlaube Overflow
+    paddingBottom: 50, // Extra Platz am Ende
   },
   subtitle: {
     fontSize: 16,
