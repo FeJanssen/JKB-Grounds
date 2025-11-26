@@ -26,6 +26,44 @@ const LoginScreen = ({ navigation }) => {
     }
 
     setLoading(true);
+    
+    // 🔧 OFFLINE/DEMO MODUS - Kein Backend nötig!
+    if (email === 'demo' && password === 'demo') {
+      console.log('🔧 DEMO MODUS aktiviert - Offline Login');
+      
+      const demoUser = {
+        id: 'demo-user-123',
+        email: 'demo@example.com',
+        name: 'Demo User',
+        verein_id: 'demo-verein-1',
+        rolle_id: '1'
+      };
+      
+      try {
+        await setUser(demoUser);
+        await AsyncStorage.setItem('userId', demoUser.id);
+        await AsyncStorage.setItem('user_id', demoUser.id);
+        await AsyncStorage.setItem('nutzer_id', demoUser.id);
+        await AsyncStorage.setItem('rolleId', demoUser.rolle_id);
+        await AsyncStorage.setItem('vereinId', demoUser.verein_id);
+        
+        console.log('✅ Demo User gespeichert:', demoUser);
+        setLoading(false);
+        
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' }],
+        });
+        return;
+      } catch (error) {
+        console.error('Demo-Login Fehler:', error);
+        Alert.alert('Demo-Login fehlgeschlagen', error.message);
+        setLoading(false);
+        return;
+      }
+    }
+    
+    // NORMALER LOGIN mit Backend
     try {
       const response = await ApiService.login({
         email: email.trim(),
@@ -47,6 +85,14 @@ const LoginScreen = ({ navigation }) => {
         if (response.user.rolle_id) {
           await AsyncStorage.setItem('rolleId', response.user.rolle_id);
           console.log('📋 Rolle-ID gespeichert:', response.user.rolle_id);
+        }
+        
+        // VEREIN-ID speichern (wichtig für HomeScreen)
+        if (response.user.verein_id) {
+          await AsyncStorage.setItem('verein_id', response.user.verein_id.toString());
+          console.log('🏛️ Verein-ID gespeichert:', response.user.verein_id);
+        } else {
+          console.warn('⚠️ Keine verein_id im User-Objekt gefunden:', response.user);
         }
         
       } else {
@@ -79,7 +125,7 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>JKB Grounds</Text>
+      <Text style={styles.title}>SV Hohenfurch</Text>
       <Text style={styles.subtitle}>Tennis Buchung</Text>
 
       <View style={styles.form}>
@@ -137,7 +183,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#2E8B57',
+    color: '#DC143C',
     marginBottom: 8,
   },
   subtitle: {
@@ -168,7 +214,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -186,7 +232,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   linkText: {
-    color: '#2E8B57',
+    color: '#DC143C',
     fontSize: 14,
   },
 });

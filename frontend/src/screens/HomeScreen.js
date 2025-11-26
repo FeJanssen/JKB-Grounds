@@ -34,7 +34,7 @@ const HomeScreen = ({ changeTab }) => {
       // Lade Verein-ID aus AsyncStorage
       const storedVereinId = await AsyncStorage.getItem('verein_id');
       if (!storedVereinId) {
-        throw new Error('Keine Verein-ID gefunden');
+        throw new Error('Keine Verein-ID gefunden - bitte neu anmelden');
       }
       
       setVereinId(storedVereinId);
@@ -45,7 +45,7 @@ const HomeScreen = ({ changeTab }) => {
       
     } catch (error) {
       console.error('❌ HomeScreen Initialisierung fehlgeschlagen:', error);
-      Alert.alert('Fehler', 'Dashboard konnte nicht initialisiert werden');
+      Alert.alert('Verein-ID fehlt', 'Bitte melden Sie sich neu an um die Verein-ID zu laden.');
     }
   };
 
@@ -62,8 +62,8 @@ const HomeScreen = ({ changeTab }) => {
       
       // Parallel laden: Heutige Buchungen und alle Plätze für den Verein
       const [todayBookingsRes, courtsRes] = await Promise.all([
-        fetch(`https://jkb-grounds-production.up.railway.app/api/bookings/date/${today}?verein_id=${useVereinId}`),
-        fetch(`https://jkb-grounds-production.up.railway.app/api/courts/verein/${useVereinId}`)
+        fetch(`http://localhost:8001/api/bookings/date/${today}?verein_id=${useVereinId}`),
+        fetch(`http://localhost:8001/api/courts/verein/${useVereinId}`)
       ]);
 
       const todayBookings = todayBookingsRes.ok ? await todayBookingsRes.json() : { bookings: [] };
@@ -156,13 +156,13 @@ const HomeScreen = ({ changeTab }) => {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>JKB Grounds</Text>
+          <Text style={styles.title}>SV Hohenfurch</Text>
           <Text style={styles.subtitle}>{getTodayDate()}</Text>
         </View>
         
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#2E8B57" />
-          <Text style={{ marginTop: 16, fontSize: 16, color: '#2E8B57', fontWeight: '600' }}>
+          <ActivityIndicator size="large" color="#DC143C" />
+          <Text style={{ marginTop: 16, fontSize: 16, color: '#DC143C', fontWeight: '600' }}>
             Lade Dashboard-Daten...
           </Text>
         </View>
@@ -174,7 +174,7 @@ const HomeScreen = ({ changeTab }) => {
     <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <Text style={styles.title}>JKB Grounds</Text>
+        <Text style={styles.title}>SV Hohenfurch</Text>
         <Text style={styles.subtitle}>{getTodayDate()}</Text>
       </View>
 
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     padding: 20,
     paddingTop: 10,
     paddingBottom: 10,
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#2E8B57',
+    color: '#DC143C',
   },
   statLabel: {
     fontSize: 14,
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
   quickAccessTitle: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: '#2E8B57',
+    color: '#DC143C',
   },
   quickAccessSubtitle: {
     fontSize: 13,
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   },
   quickAccessArrow: {
     fontSize: 20,
-    color: '#2E8B57',
+    color: '#DC143C',
     fontWeight: 'bold',
   },
 });
