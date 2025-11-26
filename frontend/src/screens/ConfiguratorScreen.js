@@ -555,8 +555,13 @@ const ConfiguratorScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* ✅ WEB-KOMPATIBLES SCROLLING - ohne eigenen ScrollView */}
-      <View style={styles.content} testID="configurator-screen">
+      {/* ✅ WEB-KOMPATIBLES SCROLLING - mit ScrollView */}
+      <ScrollView 
+        style={styles.scrollableContent}
+        contentContainerStyle={styles.scrollContentContainer}
+        showsVerticalScrollIndicator={Platform.OS === 'web'}
+        testID="configurator-screen"
+      >
         {activeTab === 'courts' ? (
           // PLÄTZE TAB
           <>
@@ -647,7 +652,7 @@ const ConfiguratorScreen = () => {
             )}
           </>
         )}
-      </View>
+      </ScrollView>
 
       {/* Modal bleibt unverändert */}
       <Modal
@@ -831,10 +836,12 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   // ✅ WEB-KOMPATIBLES SCROLLING
-  content: {
+  scrollableContent: {
+    flex: 1,
+  },
+  scrollContentContainer: {
     padding: 20,
-    minHeight: '200vh', // ✅ WEB: Genug Höhe um Scrolling zu erzwingen
-    overflow: 'visible', // ✅ WEB: Erlaube Overflow
+    paddingBottom: 50, // Extra Platz am Ende
   },
   errorContainer: {
     flex: 1,
