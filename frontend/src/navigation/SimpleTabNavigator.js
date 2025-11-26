@@ -46,8 +46,8 @@ const SimpleTabNavigator = () => {
         return;
       }
   
-      // 2. API-Aufruf mit gefundener User-ID
-      const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/users/${userId}/role`);
+      // 2. API-Aufruf mit gefundener User-ID (AWS Lambda)
+      const response = await fetch(`https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws/api/users/${userId}/role`);
       console.log('📡 API Response Status:', response.status);
       
       if (response.ok) {
