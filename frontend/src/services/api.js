@@ -1,9 +1,12 @@
-// Import API Config für einheitliche URL-Verwaltung
-import { API_CONFIG } from '../config/api.js';
+// 🚀 PRODUCTION URL (AWS Lambda) - Für AWS Deployment:
+const BASE_URL = 'https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws';
 
-// API URLs basierend auf der zentralen Konfiguration
-const API_BASE_URL = `${API_CONFIG.BASE_URL}/api/auth`;
-const API_MAIN_URL = `${API_CONFIG.BASE_URL}/api`;
+// 🔧 LOKALE ENTWICKLUNG - Zum Testen uncommentieren:
+// const BASE_URL = 'http://localhost:8001';
+
+// API URLs basierend auf der Basis-URL
+const API_BASE_URL = `${BASE_URL}/api/auth`;
+const API_MAIN_URL = `${BASE_URL}/api`;
 
 class ApiService {
   // Hilfsfunktion um User-ID zu holen

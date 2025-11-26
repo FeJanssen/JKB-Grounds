@@ -7,11 +7,14 @@ try {
   AsyncStorage = null;
 }
 
-// Import API Config für einheitliche URL-Verwaltung
-import { API_CONFIG } from '../config/api.js';
+// 🚀 PRODUCTION URL (AWS Lambda) - Für AWS Deployment:
+const BASE_URL = 'https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws';
 
-// CRM API URL basierend auf der zentralen Konfiguration
-const API_BASE_URL = `${API_CONFIG.BASE_URL}/api/crm`;
+// 🔧 LOKALE ENTWICKLUNG - Zum Testen uncommentieren:
+// const BASE_URL = 'http://localhost:8001';
+
+// CRM API URL basierend auf der Basis-URL
+const API_BASE_URL = `${BASE_URL}/api/crm`;
 
 const getHeaders = async () => {
   try {
