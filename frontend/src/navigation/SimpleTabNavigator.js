@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HomeScreen from '../screens/HomeScreen';
 import BookingScreen from '../screens/BookingScreen';
@@ -191,10 +191,21 @@ const SimpleTabNavigator = () => {
 
   return (
     <View style={styles.container} key={renderKey}>
-      {/* WEB-SPEZIFISCHE LÖSUNG: Verwende einen normalen View mit CSS overflow */}
-      <View style={styles.content} testID="tab-content">
-        {renderScreen()}
-      </View>
+      {/* WEB-SPEZIFISCHE LÖSUNG: ScrollView für Web, View für Mobile */}
+      {Platform.OS === 'web' ? (
+        <ScrollView 
+          style={styles.webContent} 
+          contentContainerStyle={styles.webContentContainer}
+          testID="tab-content"
+          showsVerticalScrollIndicator={true}
+        >
+          {renderScreen()}
+        </ScrollView>
+      ) : (
+        <View style={styles.content} testID="tab-content">
+          {renderScreen()}
+        </View>
+      )}
       
       <View style={styles.tabBar}>
         <View style={styles.tabBarInner}>
@@ -246,9 +257,14 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    overflow: 'scroll', // ✅ WEB-SPEZIFISCH: CSS overflow für React Native Web
-    height: '100%',     // ✅ WEB-SPEZIFISCH: Explizite Höhe
-    paddingBottom: 100, // ✅ Platz für Tab Bar
+  },
+  webContent: {
+    flex: 1,
+    height: '100vh',
+  },
+  webContentContainer: {
+    paddingBottom: 100, // Platz für Tab Bar
+    minHeight: '100vh',
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -260,12 +276,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tabBar: {
-    position: 'absolute',
+    position: 'fixed', // ← WEB: fixed statt absolute für bessere Performance
     bottom: 0,
     left: 0,
     right: 0,
     backgroundColor: '#fff',
-    paddingBottom: 0,        // ← ERHÖHT von 10 auf 34 für iPhone Safe Area
+    paddingBottom: Platform.OS === 'web' ? 8 : 0,
     paddingTop: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
@@ -276,8 +292,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     borderTopWidth: 0.5,
     borderTopColor: 'rgba(0,0,0,0.05)',
-    minHeight: 70,            // ← NEU: Minimale Höhe definieren
-    zIndex: 999,
+    minHeight: 70,
+    zIndex: 9999, // ← ERHÖHT für Web
   },
   tabBarInner: {
     flexDirection: 'row',
