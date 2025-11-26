@@ -333,7 +333,7 @@ const CRMScreen = () => {
       {/* LOADING OVERLAY */}
       {loading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#2E8B57" />
+          <ActivityIndicator size="large" color="#DC143C" />
           <Text style={styles.loadingText}>Lädt...</Text>
         </View>
       )}
@@ -895,7 +895,7 @@ const styles = StyleSheet.create({
   
   // HEADER - Kompakter
   header: {
-    backgroundColor: '#000',
+    backgroundColor: '#DC143C',
     paddingTop: 45,
     paddingBottom: 15,
     paddingHorizontal: 20,
@@ -1068,7 +1068,7 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#2E8B57',
+    color: '#DC143C',
   },
   statLabel: {
     fontSize: 14,
@@ -1103,7 +1103,7 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderRadius: 22.5,
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
@@ -1172,7 +1172,7 @@ const styles = StyleSheet.create({
   },
   modalSave: {
     fontSize: 16,
-    color: '#2E8B57',
+    color: '#DC143C',
     fontWeight: '600',
   },
   modalContent: {
@@ -1221,7 +1221,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,

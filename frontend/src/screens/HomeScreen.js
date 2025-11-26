@@ -62,8 +62,8 @@ const HomeScreen = ({ changeTab }) => {
       
       // Parallel laden: Heutige Buchungen und alle Plätze für den Verein
       const [todayBookingsRes, courtsRes] = await Promise.all([
-        fetch(`http://localhost:8001/api/bookings/date/${today}?verein_id=${useVereinId}`),
-        fetch(`http://localhost:8001/api/courts/verein/${useVereinId}`)
+        fetch(`https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws/api/bookings/date/${today}?verein_id=${useVereinId}`),
+        fetch(`https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws/api/courts/verein/${useVereinId}`)
       ]);
 
       const todayBookings = todayBookingsRes.ok ? await todayBookingsRes.json() : { bookings: [] };

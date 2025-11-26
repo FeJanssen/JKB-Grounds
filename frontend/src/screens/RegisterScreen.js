@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     title: {
       fontSize: 28,
       fontWeight: 'bold',
-      color: '#2E8B57',
+      color: '#DC143C',
       marginBottom: 8,
     },
     subtitle: {
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     infoBox: {
       backgroundColor: '#e8f4f8',
       borderLeftWidth: 4,
-      borderLeftColor: '#2E8B57',
+      borderLeftColor: '#DC143C',
       padding: 15,
       marginBottom: 20,
       borderRadius: 5,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
       lineHeight: 20,
     },
     button: {
-      backgroundColor: '#2E8B57',
+      backgroundColor: '#DC143C',
       padding: 15,
       borderRadius: 8,
       alignItems: 'center',
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
       alignItems: 'center',
     },
     linkText: {
-      color: '#2E8B57',
+      color: '#DC143C',
       fontSize: 14,
     },
   });

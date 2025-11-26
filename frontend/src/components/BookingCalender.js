@@ -389,7 +389,7 @@ const BookingCalendar = ({ courts = [], canBookPublic = false, vereinId = null, 
             onPress={goToPreviousCourts}
             disabled={!canShowPreviousCourts}
           >
-            <Text style={styles.courtNavButtonText}>← Vorherige</Text>
+            <Text style={styles.courtNavButtonText}>←</Text>
           </TouchableOpacity>
           
           <Text style={styles.courtNavInfo}>
@@ -401,7 +401,7 @@ const BookingCalendar = ({ courts = [], canBookPublic = false, vereinId = null, 
             onPress={goToNextCourts}
             disabled={!canShowNextCourts}
           >
-            <Text style={styles.courtNavButtonText}>Nächste →</Text>
+            <Text style={styles.courtNavButtonText}>→</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -430,6 +430,31 @@ const BookingCalendar = ({ courts = [], canBookPublic = false, vereinId = null, 
             {visibleCourts.map((court) => {
               const isBooked = isTimeSlotBooked(court.id, timeSlot);
               const isBookable = isTimeSlotBookable(court, timeSlot);
+              const bookingInfo = isBooked ? getBookingInfo(court.id, timeSlot) : null;
+              
+              // Debug-Logging für Buchungsinfo
+              if (isBooked && bookingInfo) {
+                console.log('🔍 BookingInfo für', timeSlot, ':', {
+                  buchungstyp: bookingInfo.buchungstyp,
+                  notizen: bookingInfo.notizen,
+                  fullBooking: bookingInfo
+                });
+              }
+              
+              // Bestimme den anzuzeigenden Text
+              let displayText = 'Frei';
+              if (!isBookable) {
+                displayText = 'Gesperrt';
+              } else if (isBooked && bookingInfo) {
+                // Wenn öffentlich (buchungstyp === 'public') und Notizen vorhanden, zeige Notizen
+                if (bookingInfo.buchungstyp === 'public' && bookingInfo.notizen) {
+                  console.log('✅ Zeige Notizen für öffentliche Buchung:', bookingInfo.notizen);
+                  displayText = bookingInfo.notizen;
+                } else {
+                  console.log('⚠️ Zeige "Gebucht" - buchungstyp:', bookingInfo.buchungstyp, 'notizen:', bookingInfo.notizen);
+                  displayText = 'Gebucht';
+                }
+              }
               
               return (
                 <TouchableOpacity
@@ -442,12 +467,16 @@ const BookingCalendar = ({ courts = [], canBookPublic = false, vereinId = null, 
                   onPress={() => handleTimeSlotPress(court, timeSlot)}
                   disabled={isBooked || !isBookable}
                 >
-                  <Text style={[
-                    styles.bookingCellText,
-                    isBooked && styles.bookedCellText,
-                    !isBookable && styles.notBookableCellText
-                  ]}>
-                    {isBooked ? 'Gebucht' : (isBookable ? 'Frei' : 'Gesperrt')}
+                  <Text 
+                    style={[
+                      styles.bookingCellText,
+                      isBooked && styles.bookedCellText,
+                      !isBookable && styles.notBookableCellText
+                    ]}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    {displayText}
                   </Text>
                 </TouchableOpacity>
               );

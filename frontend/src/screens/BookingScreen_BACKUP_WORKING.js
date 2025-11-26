@@ -226,7 +226,7 @@ const BookingScreen = ({ navigation }) => {
     return (
       <View style={styles.container}>
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#2E8B57" />
+          <ActivityIndicator size="large" color="#DC143C" />
           <Text style={styles.loadingText}>
             {!isPermissionsLoaded() ? 'Lade Berechtigungen...' : 'Lade verfügbare Plätze...'}
           </Text>
@@ -281,7 +281,7 @@ const BookingScreen = ({ navigation }) => {
               <RefreshControl 
                 refreshing={refreshing} 
                 onRefresh={onRefresh} 
-                colors={['#2E8B57']}
+                colors={['#DC143C']}
               />
             }
           >
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeViewButton: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
   },
   viewButtonText: {
     fontSize: 16,
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   bookButton: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   switchButton: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
