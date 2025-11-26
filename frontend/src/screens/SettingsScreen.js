@@ -48,7 +48,7 @@ const SettingsScreen = ({ changeTab }) => {
       }
       
       if (!userId) {
-        Alert.alert('Fehler', 'Keine Benutzer-ID verfügbar. Bitte melde dich erneut an.');
+        window.alert('Fehler: Keine Benutzer-ID verfügbar. Bitte melde dich erneut an.');
         return;
       }
 
@@ -74,7 +74,7 @@ const SettingsScreen = ({ changeTab }) => {
   const loadUserProfile = async (userId) => {
     try {
       console.log('Lade Profil für User:', userId);
-      const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/users/${userId}`);
+      const response = await fetch(`http://localhost:8001/api/users/${userId}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -103,7 +103,7 @@ const SettingsScreen = ({ changeTab }) => {
       const today = new Date().toISOString().split('T')[0];
       console.log('🔍 Lade Buchungen für User:', userId, 'ab:', today);
       
-      const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/users/${userId}/bookings?from_date=${today}`);
+      const response = await fetch(`http://localhost:8001/api/users/${userId}/bookings?from_date=${today}`);
       
       console.log('📡 Response Status:', response.status);
       
@@ -144,18 +144,19 @@ const SettingsScreen = ({ changeTab }) => {
   };
 
   const cancelBooking = (booking) => {
-    Alert.alert(
-      'Buchung stornieren',
-      `Möchten Sie die Buchung für ${booking.platz?.name} am ${formatDate(booking.datum)} um ${booking.uhrzeit_von.substring(0, 5)} Uhr wirklich stornieren?`,
-      [
-        { text: 'Abbrechen', style: 'cancel' },
-        {
-          text: 'Stornieren',
-          style: 'destructive',
-          onPress: () => confirmCancelBooking(booking.id)
-        }
-      ]
+    console.log('🗑️ Stornieren Button geklickt für Buchung:', booking.id);
+    
+    // Web-kompatibles Confirm statt Alert.alert
+    const confirmed = window.confirm(
+      `Möchten Sie die Buchung für ${booking.platz?.name} am ${formatDate(booking.datum)} um ${booking.uhrzeit_von.substring(0, 5)} Uhr wirklich stornieren?`
     );
+    
+    if (confirmed) {
+      console.log('✅ User hat Stornierung bestätigt');
+      confirmCancelBooking(booking.id);
+    } else {
+      console.log('❌ User hat Stornierung abgebrochen');
+    }
   };
 
   const confirmCancelBooking = async (bookingId) => {
@@ -178,13 +179,13 @@ const SettingsScreen = ({ changeTab }) => {
       if (!userId) {
         const allKeys = await AsyncStorage.getAllKeys();
         console.error('❌ Keine User-ID verfügbar in:', { userProfile, AsyncStorageKeys: allKeys });
-        Alert.alert('Fehler', 'Keine Benutzer-ID verfügbar. Bitte melde dich erneut an.');
+        window.alert('Fehler: Keine Benutzer-ID verfügbar. Bitte melde dich erneut an.');
         return;
       }
       
       console.log('👤 Verwende User-ID für Stornierung:', userId);
       
-      const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/bookings/${bookingId}`, {
+      const response = await fetch(`http://localhost:8001/api/bookings/${bookingId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -198,7 +199,7 @@ const SettingsScreen = ({ changeTab }) => {
       if (response.ok) {
         const result = await response.json();
         console.log('✅ Stornierung erfolgreich:', result);
-        Alert.alert('Erfolg', 'Buchung wurde erfolgreich storniert.');
+        window.alert('Buchung wurde erfolgreich storniert.');
         
         // Reload user data to update the bookings list
         await loadUserData();
@@ -214,20 +215,20 @@ const SettingsScreen = ({ changeTab }) => {
         }
         
         if (response.status === 404) {
-          Alert.alert('Fehler', 'Buchung wurde nicht gefunden.');
+          window.alert('Fehler: Buchung wurde nicht gefunden.');
         } else if (response.status === 401) {
-          Alert.alert('Fehler', 'Authentifizierung fehlgeschlagen. Bitte melde dich erneut an.');
+          window.alert('Fehler: Authentifizierung fehlgeschlagen. Bitte melde dich erneut an.');
         } else if (response.status === 403) {
-          Alert.alert('Fehler', 'Sie haben keine Berechtigung, diese Buchung zu stornieren.');
+          window.alert('Fehler: Sie haben keine Berechtigung, diese Buchung zu stornieren.');
         } else if (response.status === 400) {
-          Alert.alert('Fehler', 'Buchung kann nicht storniert werden (möglicherweise zu spät).');
+          window.alert('Fehler: Buchung kann nicht storniert werden (möglicherweise zu spät).');
         } else {
-          Alert.alert('Fehler', `Buchung konnte nicht storniert werden (${response.status}). Bitte versuchen Sie es später erneut.`);
+          window.alert(`Fehler: Buchung konnte nicht storniert werden (${response.status}). Bitte versuchen Sie es später erneut.`);
         }
       }
     } catch (error) {
       console.error('❌ Exception beim Stornieren:', error);
-      Alert.alert('Fehler', 'Verbindungsfehler beim Stornieren. Bitte überprüfen Sie Ihre Internetverbindung.');
+      window.alert('Fehler: Verbindungsfehler beim Stornieren. Bitte überprüfen Sie Ihre Internetverbindung.');
     }
   };
 
@@ -265,14 +266,14 @@ const SettingsScreen = ({ changeTab }) => {
       }
 
       if (Object.keys(updateData).length === 0) {
-        Alert.alert('Keine Änderungen', 'Es wurden keine Änderungen vorgenommen.');
+        window.alert('Keine Änderungen: Es wurden keine Änderungen vorgenommen.');
         setEditModalVisible(false);
         return;
       }
 
       console.log('Sende Update:', updateData);
 
-      const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/users/${userId}`, {
+      const response = await fetch(`http://localhost:8001/api/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -292,7 +293,7 @@ const SettingsScreen = ({ changeTab }) => {
         await setUser(updatedUser);
         
         setEditModalVisible(false);
-        Alert.alert('Erfolg', 'Profil wurde aktualisiert.');
+        window.alert('Erfolg: Profil wurde aktualisiert.');
       } else {
         throw new Error(data.detail || 'Profil konnte nicht aktualisiert werden');
       }
@@ -314,7 +315,7 @@ const SettingsScreen = ({ changeTab }) => {
           text: 'Abmelden',
           onPress: async () => {
             await clearUser();
-            Alert.alert('Abgemeldet', 'Sie wurden erfolgreich abgemeldet.');
+            window.alert('Abgemeldet: Sie wurden erfolgreich abgemeldet.');
           }
         }
       ]
@@ -337,7 +338,7 @@ const SettingsScreen = ({ changeTab }) => {
   if (loading) {
     return (
       <View style={styles.loadingOverlay}>
-        <ActivityIndicator size="large" color="#2E8B57" />
+        <ActivityIndicator size="large" color="#DC143C" />
         <Text style={styles.loadingText}>Lade Einstellungen...</Text>
       </View>
     );
@@ -358,7 +359,7 @@ const SettingsScreen = ({ changeTab }) => {
           <RefreshControl 
             refreshing={refreshing} 
             onRefresh={onRefresh} 
-            colors={['#2E8B57']}
+            colors={['#DC143C']}
           />
         }
       >
@@ -558,7 +559,7 @@ const styles = StyleSheet.create({
   },
   // ✅ FIXED HEADER wie im CRM
   header: {
-    backgroundColor: '#000',
+    backgroundColor: '#DC143C',
     paddingTop: 45,
     paddingBottom: 15,
     paddingHorizontal: 20,
@@ -606,7 +607,7 @@ const styles = StyleSheet.create({
   bookingTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2E8B57',
+    color: '#DC143C',
   },
   bookingDate: {
     fontSize: 14,
@@ -646,7 +647,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   bookNowButton: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
@@ -742,7 +743,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   genderOptionSelected: {
-    borderColor: '#2E8B57',
+    borderColor: '#DC143C',
     backgroundColor: '#e8f5e8',
   },
   genderOptionText: {
@@ -750,7 +751,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   genderOptionTextSelected: {
-    color: '#2E8B57',
+    color: '#DC143C',
     fontWeight: 'bold',
   },
   modalButtons: {
@@ -774,7 +775,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
     borderRadius: 8,
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     marginLeft: 8,
     alignItems: 'center',
   },

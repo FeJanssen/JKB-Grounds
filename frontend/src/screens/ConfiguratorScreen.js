@@ -85,7 +85,7 @@ const ConfiguratorScreen = () => {
       console.log('👤 Konfigurator: User-ID geladen:', userId);
       
       // User-Daten laden um Verein-ID zu bekommen
-      const userResponse = await fetch(`https://jkb-grounds-production.up.railway.app/api/auth/auth/user/${userId}`);
+      const userResponse = await fetch(`http://localhost:8001/api/auth/auth/user/${userId}`);
       if (!userResponse.ok) {
         throw new Error('User-Daten konnten nicht geladen werden');
       }
@@ -149,7 +149,7 @@ const ConfiguratorScreen = () => {
         throw new Error('Keine Verein-ID verfügbar');
       }
       
-      const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/courts/verein/${vereinId}`);
+      const response = await fetch(`http://localhost:8001/api/courts/verein/${vereinId}`);
       
       console.log('📡 Courts API Response Status:', response.status);
       
@@ -193,7 +193,7 @@ const ConfiguratorScreen = () => {
   const loadRoles = async () => {
     try {
       console.log('👥 Lade Rollen...');
-      const response = await fetch('https://jkb-grounds-production.up.railway.app/api/roles/');
+      const response = await fetch('http://localhost:8001/api/roles/');
       
       console.log('📡 Roles API Response Status:', response.status);
       
@@ -229,7 +229,7 @@ const ConfiguratorScreen = () => {
         throw new Error('Keine Verein-ID verfügbar');
       }
       
-      const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/permissions/verein/${vereinId}`);
+      const response = await fetch(`http://localhost:8001/api/permissions/verein/${vereinId}`);
       
       console.log('📡 Permissions API Response Status:', response.status);
       
@@ -275,7 +275,7 @@ const ConfiguratorScreen = () => {
     return (
       <View style={styles.container}>
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#2E8B57" />
+          <ActivityIndicator size="large" color="#DC143C" />
           <Text style={styles.loadingText}>Lade Konfigurator...</Text>
         </View>
       </View>
@@ -344,8 +344,8 @@ const ConfiguratorScreen = () => {
       };
 
       const url = editingCourt 
-        ? `https://jkb-grounds-production.up.railway.app/api/courts/${editingCourt.id}`
-        : 'https://jkb-grounds-production.up.railway.app/api/courts';
+        ? `http://localhost:8001/api/courts/${editingCourt.id}`
+        : 'http://localhost:8001/api/courts';
       
       const method = editingCourt ? 'PUT' : 'POST';
 
@@ -434,7 +434,7 @@ const ConfiguratorScreen = () => {
         return;
       }
       
-      const response = await fetch(`https://jkb-grounds-production.up.railway.app/api/courts/${platzId}`, {
+      const response = await fetch(`http://localhost:8001/api/courts/${platzId}`, {
         method: 'DELETE',
         headers: {
           'X-User-ID': currentUserId
@@ -497,7 +497,7 @@ const ConfiguratorScreen = () => {
       
       console.log('🔄 Toggle Berechtigung Request:', payload);
       
-      const response = await fetch('https://jkb-grounds-production.up.railway.app/api/permissions/toggle', {
+      const response = await fetch('http://localhost:8001/api/permissions/toggle', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -633,7 +633,7 @@ const ConfiguratorScreen = () => {
                       <Switch
                         value={hasPermission(role.id, recht.key)}
                         onValueChange={(value) => togglePermission(role.id, recht.key, value)}
-                        trackColor={{ false: '#767577', true: '#2E8B57' }}
+                        trackColor={{ false: '#767577', true: '#DC143C' }}
                         thumbColor={hasPermission(role.id, recht.key) ? '#fff' : '#f4f3f4'}
                       />
                     </View>
@@ -792,7 +792,7 @@ const styles = StyleSheet.create({
   },
   // ✅ FIXED HEADER wie im CRM
   header: {
-    backgroundColor: '#000',
+    backgroundColor: '#DC143C',
     paddingTop: 45,
     paddingBottom: 15,
     paddingHorizontal: 20,
@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeTabButton: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
   },
   tabButtonText: {
     fontSize: 16,
@@ -850,7 +850,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
@@ -893,7 +893,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   addButton: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -1117,7 +1117,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 1,
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     paddingVertical: 16,
     borderRadius: 8,
     alignItems: 'center',

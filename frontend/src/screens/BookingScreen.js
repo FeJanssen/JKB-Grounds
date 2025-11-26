@@ -53,7 +53,7 @@ const BookingScreen = ({ navigation }) => {
       }
       
       // 3. User-Daten laden
-      const userUrl = `https://jkb-grounds-production.up.railway.app/api/auth/auth/user/${userId}`;
+      const userUrl = `https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws/api/auth/auth/user/${userId}`;
       console.log('🔍 FRONTEND: Versuche User-Daten zu laden von:', userUrl);
       
       const userResponse = await fetch(userUrl);
@@ -111,7 +111,7 @@ const BookingScreen = ({ navigation }) => {
       
       console.log(`🏢 ENTERPRISE: Lade Courts für Verein ${targetVereinId}`);
       
-      const url = `https://jkb-grounds-production.up.railway.app/api/courts/verein/${targetVereinId}`;
+      const url = `https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws/api/courts/verein/${targetVereinId}`;
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -197,7 +197,7 @@ const BookingScreen = ({ navigation }) => {
 
       console.log('📤 ENTERPRISE: Sende Buchungsdaten:', bookingData);
 
-      const response = await fetch('https://jkb-grounds-production.up.railway.app/api/bookings/create', {
+      const response = await fetch('https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws/api/bookings/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -231,7 +231,7 @@ const BookingScreen = ({ navigation }) => {
     return (
       <View style={styles.container}>
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#2E8B57" />
+          <ActivityIndicator size="large" color="#DC143C" />
           <Text style={styles.loadingText}>
             {!isPermissionsLoaded() ? 'Lade Berechtigungen...' : 'Lade verfügbare Plätze...'}
           </Text>
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   },
   // ✅ FIXED HEADER wie im CRM
   header: {
-    backgroundColor: '#000',
+    backgroundColor: '#DC143C',
     paddingTop: 45,
     paddingBottom: 15,
     paddingHorizontal: 20,
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeViewButton: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
   },
   viewButtonText: {
     fontSize: 16,
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   bookButton: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   switchButton: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: '#DC143C',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
