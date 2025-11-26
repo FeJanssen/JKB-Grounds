@@ -919,7 +919,8 @@ const styles = StyleSheet.create({
   },
   scrollContentContainer: {
     padding: 20,
-    paddingBottom: 50, // Extra Platz am Ende
+    paddingBottom: 120, // Mehr Platz für Tab Bar
+    flexGrow: 1, // Für korrektes Scrolling
   },
 
   // EMPTY STATE
