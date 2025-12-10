@@ -45,9 +45,9 @@ export const APP_CONFIG = {
 // API Endpoints - dynamisch basierend auf BASE_URL
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: '/api/auth/auth/login',
-    REGISTER: '/api/auth/auth/register',
-    USER: (userId) => `/api/auth/auth/user/${userId}`,
+    LOGIN: '/api/auth/login',
+    REGISTER: '/api/auth/register',
+    USER: (userId) => `/api/auth/user/${userId}`,
     ROLE: (userId) => `/api/users/${userId}/role`,
   },
   

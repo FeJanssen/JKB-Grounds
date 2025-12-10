@@ -4,8 +4,8 @@ const BASE_URL = 'https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central
 // 🔧 LOKALE ENTWICKLUNG - Zum Testen uncommentieren:
 // const BASE_URL = 'http://localhost:8001';
 
-// API URLs basierend auf der Basis-URL
-const API_BASE_URL = `${BASE_URL}/api/auth`;
+// API URLs basierend auf der Basis-URL - KORRIGIERT!
+const API_BASE_URL = `${BASE_URL}/api`;
 const API_MAIN_URL = `${BASE_URL}/api`;
 
 class ApiService {

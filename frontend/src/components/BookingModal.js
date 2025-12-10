@@ -179,7 +179,7 @@ const BookingModal = ({
               
               <View style={styles.switchContainer}>
                 <View style={styles.switchOption}>
-                  <View>
+                  <View style={styles.switchTextContainer}>
                     <Text style={styles.switchLabel}>
                       {isPublic ? '🌍 Öffentliche Buchung' : '🔒 Private Buchung'}
                     </Text>
@@ -196,26 +196,29 @@ const BookingModal = ({
                       </Text>
                     )}
                   </View>
-                  <Switch
-                    value={isPublic}
-                    onValueChange={(value) => {
-                      // ✅ PERMISSION CHECK beim Switch
-                      if (value && !canBookPublic) {
-                        Alert.alert(
-                          'Keine Berechtigung',
-                          'Sie haben keine Berechtigung für öffentliche Buchungen.'
-                        );
-                        return;
-                      }
-                      setIsPublic(value);
-                    }}
-                    trackColor={{ 
-                      false: '#ccc', 
-                      true: canBookPublic ? '#2E8B57' : '#ccc'  // ✅ Disabled Color
-                    }}
-                    thumbColor={'#fff'}
-                    disabled={!canBookPublic}  // ✅ Switch deaktiviert wenn keine Berechtigung
-                  />
+                  <View style={styles.switchWrapper}>
+                    <Switch
+                      key={`switch-${isPublic}-${canBookPublic}`}  // ✅ FIX: Zwingt Re-render
+                      value={isPublic}
+                      onValueChange={(value) => {
+                        // ✅ PERMISSION CHECK beim Switch
+                        if (value && !canBookPublic) {
+                          Alert.alert(
+                            'Keine Berechtigung',
+                            'Sie haben keine Berechtigung für öffentliche Buchungen.'
+                          );
+                          return;
+                        }
+                        setIsPublic(value);
+                      }}
+                      trackColor={{ 
+                        false: '#ccc', 
+                        true: canBookPublic ? '#2E8B57' : '#ccc'  // ✅ Disabled Color
+                      }}
+                      thumbColor={'#fff'}
+                      disabled={!canBookPublic}  // ✅ Switch deaktiviert wenn keine Berechtigung
+                    />
+                  </View>
                 </View>
               </View>
             </View>
@@ -376,6 +379,14 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 18,
     maxWidth: '80%',
+  },
+  switchTextContainer: {
+    flex: 1,
+    marginRight: 16,
+  },
+  switchWrapper: {
+    minWidth: 50,
+    alignItems: 'flex-end',
   },
   permissionWarning: {
     fontSize: 12,

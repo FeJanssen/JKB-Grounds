@@ -54,7 +54,7 @@ const BookingScreen = ({ navigation }) => {
       }
       
       // 3. User-Daten laden
-      const userUrl = `https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws/api/auth/auth/user/${userId}`;
+      const userUrl = `https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws/api/auth/user/${userId}`;
       console.log('🔍 FRONTEND: Versuche User-Daten zu laden von:', userUrl);
       
       const userResponse = await fetch(userUrl);
