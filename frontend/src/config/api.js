@@ -20,7 +20,7 @@ const API_CONFIG = {
 export const API_URLS = {
   // Auth
   AUTH_BASE: `${API_CONFIG.BASE_URL}/api/auth`,
-  AUTH_USER: (userId) => `${API_CONFIG.BASE_URL}/api/auth/auth/user/${userId}`,
+  AUTH_USER: (userId) => `${API_CONFIG.BASE_URL}/api/auth/user/${userId}`,
   
   // Courts
   COURTS_BY_VEREIN: (vereinId) => `${API_CONFIG.BASE_URL}/api/courts/verein/${vereinId}`,

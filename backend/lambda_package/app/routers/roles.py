@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from app.database.connection import supabase
 
-router = APIRouter(prefix="/api/roles", tags=["roles"])
+router = APIRouter(prefix="", tags=["roles"])
 
-@router.get("/")
+@router.get("")
 async def get_all_roles():
     """Alle Rollen laden"""
     try:

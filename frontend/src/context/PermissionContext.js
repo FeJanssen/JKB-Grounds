@@ -42,7 +42,7 @@ export const PermissionProvider = ({ children }) => {
       console.log('👤 STEP 2: User-ID gefunden:', userId);
 
       // SCHRITT 2: User-Daten laden
-      const userResponse = await fetch(`${API_BASE_URL}/api/auth/auth/user/${userId}`);
+      const userResponse = await fetch(`${API_BASE_URL}/api/auth/user/${userId}`);
       
       if (!userResponse.ok) {
         throw new Error(`User-API Fehler: ${userResponse.status}`);

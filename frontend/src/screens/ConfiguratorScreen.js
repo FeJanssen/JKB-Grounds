@@ -86,7 +86,7 @@ const ConfiguratorScreen = () => {
       console.log('👤 Konfigurator: User-ID geladen:', userId);
       
       // User-Daten laden um Verein-ID zu bekommen
-      const userResponse = await fetch(`${API_BASE_URL}/api/auth/auth/user/${userId}`);
+      const userResponse = await fetch(`${API_BASE_URL}/api/auth/user/${userId}`);
       if (!userResponse.ok) {
         throw new Error('User-Daten konnten nicht geladen werden');
       }
