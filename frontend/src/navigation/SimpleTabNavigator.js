@@ -263,30 +263,30 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#fff',
-    paddingBottom: Platform.OS === 'web' ? 12 : 0, // ← Etwas mehr Padding für Web
-    paddingTop: 8,
+    paddingBottom: Platform.OS === 'web' ? 6 : 0, // ← Reduziertes Padding
+    paddingTop: 4, // ← Reduziert von 8 auf 4
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 16,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 16, // ← Kleinerer Radius
+    borderTopRightRadius: 16,
     borderTopWidth: 0.5,
     borderTopColor: 'rgba(0,0,0,0.05)',
-    minHeight: 70,
+    minHeight: 50, // ← Reduziert von 70 auf 50
     zIndex: 9999, // ← Höherer Z-Index für Web
   },
   tabBarInner: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingVertical: 4, // ← Reduziert von 8 auf 4
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 6, // ← Reduziert von 12 auf 6
     position: 'relative',
   },
   activeTab: {},
@@ -299,12 +299,12 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 32, // ← Reduziert von 44 auf 32
+    height: 32, // ← Reduziert von 44 auf 32
+    borderRadius: 16, // ← Entsprechend angepasst
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 2, // ← Reduziert von 4 auf 2
     backgroundColor: 'transparent',
   },
   activeIconContainer: {
@@ -312,23 +312,23 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.1 }],
   },
   tabIcon: {
-    fontSize: 24,
+    fontSize: 20, // ← Reduziert von 24 auf 20
     opacity: 0.6,
   },
   activeTabIcon: {
-    fontSize: 26,
+    fontSize: 22, // ← Reduziert von 26 auf 22
     opacity: 1,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 10, // ← Reduziert von 11 auf 10
     color: '#8E8E93',
     fontWeight: '500',
-    marginTop: 2,
+    marginTop: 1, // ← Reduziert von 2 auf 1
   },
   activeTabText: {
     color: '#2E8B57',
     fontWeight: '600',
-    fontSize: 12,
+    fontSize: 11, // ← Reduziert von 12 auf 11
   },
 });
 

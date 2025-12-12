@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Modal,
+  FlatList,
 } from 'react-native';
 import ApiService from '../services/api';
 
@@ -17,11 +19,15 @@ const RegisterScreen = ({ navigation }) => {
     email: '',
     password: '',
     confirmPassword: '',
-    verein_id: '', // Jetzt leer - Benutzer muss eingeben
-    vereinspasswort: '',
+    vereinsname: '',
     geschlecht: ''
   });
   const [loading, setLoading] = useState(false);
+  const [clubs, setClubs] = useState([]);
+  const [loadingClubs, setLoadingClubs] = useState(false);
+  const [showClubDropdown, setShowClubDropdown] = useState(false);
+  const [clubSearchText, setClubSearchText] = useState('');
+  const [filteredClubs, setFilteredClubs] = useState([]);
 
   const updateField = (field, value) => {
     setFormData(prev => ({
@@ -30,9 +36,54 @@ const RegisterScreen = ({ navigation }) => {
     }));
   };
 
+  // Lade Vereine beim Start
+  useEffect(() => {
+    loadClubs();
+  }, []);
+
+  const loadClubs = async () => {
+    setLoadingClubs(true);
+    try {
+      const response = await fetch('https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws/api/clubs/list');
+      const data = await response.json();
+      setClubs(data.clubs || []);
+      setFilteredClubs(data.clubs || []);
+    } catch (error) {
+      console.error('Fehler beim Laden der Vereine:', error);
+      Alert.alert('Fehler', 'Vereine konnten nicht geladen werden');
+    } finally {
+      setLoadingClubs(false);
+    }
+  };
+
+  // Filtere Vereine basierend auf Suchtext
+  const filterClubs = (searchText) => {
+    setClubSearchText(searchText);
+    if (searchText.length === 0) {
+      setFilteredClubs(clubs);
+    } else {
+      const filtered = clubs.filter(club =>
+        club.name.toLowerCase().includes(searchText.toLowerCase())
+      );
+      setFilteredClubs(filtered);
+    }
+  };
+
+  const selectClub = (club) => {
+    updateField('vereinsname', club.name);
+    setShowClubDropdown(false);
+    setClubSearchText(club.name);
+  };
+
+  const openClubDropdown = () => {
+    setClubSearchText(formData.vereinsname);
+    filterClubs(formData.vereinsname);
+    setShowClubDropdown(true);
+  };
+
   const handleRegister = async () => {
     // Validierung
-    if (!formData.name || !formData.email || !formData.password || !formData.verein_id || !formData.vereinspasswort) {
+    if (!formData.name || !formData.email || !formData.password || !formData.vereinsname) {
       Alert.alert('Fehler', 'Bitte alle Pflichtfelder ausfüllen');
       return;
     }
@@ -47,14 +98,20 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
+    // Prüfe ob der ausgewählte Verein existiert
+    const selectedClub = clubs.find(club => club.name === formData.vereinsname);
+    if (!selectedClub) {
+      Alert.alert('Fehler', 'Bitte wählen Sie einen gültigen Verein aus der Liste');
+      return;
+    }
+
     setLoading(true);
     try {
       const registerData = {
         name: formData.name.trim(),
         email: formData.email.trim(),
         password: formData.password,
-        verein_id: formData.verein_id.trim(),
-        vereinspasswort: formData.vereinspasswort.trim(),
+        vereinsname: formData.vereinsname.trim(),
         geschlecht: formData.geschlecht || null
       };
 
@@ -124,21 +181,15 @@ const RegisterScreen = ({ navigation }) => {
           secureTextEntry
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Verein-ID *"
-          value={formData.verein_id}
-          onChangeText={(value) => updateField('verein_id', value)}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Vereinspasswort *"
-          value={formData.vereinspasswort}
-          onChangeText={(value) => updateField('vereinspasswort', value)}
-        />
+        <TouchableOpacity 
+          style={styles.dropdownButton}
+          onPress={openClubDropdown}
+        >
+          <Text style={[styles.dropdownText, !formData.vereinsname && styles.placeholderText]}>
+            {formData.vereinsname || 'Verein auswählen *'}
+          </Text>
+          <Text style={styles.dropdownArrow}>▼</Text>
+        </TouchableOpacity>
 
         <TextInput
           style={styles.input}
@@ -187,6 +238,57 @@ const RegisterScreen = ({ navigation }) => {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Verein Auswahl Modal */}
+      <Modal
+        visible={showClubDropdown}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowClubDropdown(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Verein auswählen</Text>
+              <TouchableOpacity 
+                onPress={() => setShowClubDropdown(false)}
+                style={styles.modalCloseButton}
+              >
+                <Text style={styles.modalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Verein suchen... (z.B. 'SV Hoh' für SV Hohenfurch)"
+              value={clubSearchText}
+              onChangeText={filterClubs}
+            />
+
+            {loadingClubs ? (
+              <ActivityIndicator size="large" color="#DC143C" style={styles.loadingIndicator} />
+            ) : (
+              <FlatList
+                data={filteredClubs}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.clubItem}
+                    onPress={() => selectClub(item)}
+                  >
+                    <Text style={styles.clubName}>{item.name}</Text>
+                  </TouchableOpacity>
+                )}
+                ListEmptyComponent={
+                  <Text style={styles.noResultsText}>
+                    Keine Vereine gefunden. Versuchen Sie einen anderen Suchbegriff.
+                  </Text>
+                }
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -276,6 +378,85 @@ const styles = StyleSheet.create({
     linkText: {
       color: '#DC143C',
       fontSize: 14,
+    },
+    dropdownButton: {
+      borderWidth: 1,
+      borderColor: '#ddd',
+      borderRadius: 8,
+      padding: 15,
+      marginBottom: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: '#fff',
+    },
+    dropdownText: {
+      fontSize: 16,
+      color: '#000',
+    },
+    placeholderText: {
+      color: '#999',
+    },
+    dropdownArrow: {
+      fontSize: 12,
+      color: '#666',
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      backgroundColor: '#fff',
+      borderRadius: 10,
+      padding: 20,
+      width: '90%',
+      maxHeight: '80%',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: '#DC143C',
+    },
+    modalCloseButton: {
+      padding: 5,
+    },
+    modalCloseText: {
+      fontSize: 18,
+      color: '#666',
+    },
+    searchInput: {
+      borderWidth: 1,
+      borderColor: '#ddd',
+      borderRadius: 8,
+      padding: 15,
+      marginBottom: 15,
+      fontSize: 16,
+    },
+    clubItem: {
+      padding: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: '#eee',
+    },
+    clubName: {
+      fontSize: 16,
+      color: '#000',
+    },
+    noResultsText: {
+      textAlign: 'center',
+      color: '#666',
+      fontSize: 16,
+      padding: 20,
+    },
+    loadingIndicator: {
+      marginVertical: 20,
     },
   });
   
