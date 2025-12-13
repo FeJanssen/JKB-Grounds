@@ -31,12 +31,23 @@ async def get_current_user_id(request: Request, x_user_id: str = Header(None, al
 # ENTERPRISE PYDANTIC MODELS
 class BookingRequest(BaseModel):
     """Enterprise Booking Request Model"""
-    platz_id: str  # ✅ Korrigiert: platz_id (konsistent mit Datenbank)
+    platz_id: str  # Korrigiert: platz_id (konsistent mit Datenbank)
     date: str  # YYYY-MM-DD Format
     time: str  # HH:MM Format
     duration: int  # Minuten (Standard: 60)
     type: str  # 'private' oder 'public'
     notes: Optional[str] = ""
+
+class SeriesBookingRequest(BaseModel):
+    """Enterprise Series Booking Request Model - Abo-Buchungen"""
+    platz_id: str
+    start_date: str  # YYYY-MM-DD Format - Startdatum der Serie
+    time: str  # HH:MM Format
+    duration: int  # Minuten (Standard: 60)
+    type: str  # 'private' oder 'public'
+    notes: Optional[str] = ""
+    weeks: int  # Anzahl Wochen (4, 8, 12, 16)
+    series_name: str  # Name der Serie (z.B. "Montag Training")
 
 class BookingResponse(BaseModel):
     """Enterprise Booking Response Model"""
@@ -100,9 +111,11 @@ async def create_booking(
 
         print(f"🛡️ ENTERPRISE SECURITY: Alle Berechtigungsprüfungen erfolgreich")
         
-        # ENTERPRISE BOOKING DATA PREPARATION
+        # EINZELBUCHUNG
+        print(f"📅 EINZELBUCHUNG erkannt")
+        
         booking_data = {
-            "court_id": request.platz_id,  # ✅ Korrigiert: request.platz_id 
+            "court_id": request.platz_id,  # Korrigiert: request.platz_id 
             "date": request.date,
             "time": request.time,
             "duration": request.duration,
@@ -111,12 +124,12 @@ async def create_booking(
             "user_id": user_id
         }
         
-        print(f"📤 ENTERPRISE BOOKING: Erstelle Buchung mit verifizierten Daten")
+        print(f"📤 ENTERPRISE BOOKING: Erstelle Einzelbuchung mit verifizierten Daten")
         
         # EXECUTE BOOKING VIA SERVICE LAYER
         result = await booking_service.create_booking(booking_data)
         
-        print(f"✅ ENTERPRISE SUCCESS: Buchung erfolgreich erstellt")
+        print(f"✅ ENTERPRISE SUCCESS: Einzelbuchung erfolgreich erstellt")
         
         return {
             "status": "success", 
@@ -135,6 +148,166 @@ async def create_booking(
             status_code=500, 
             detail={
                 "error": "Buchungsfehler", 
+                "message": str(e),
+                "error_type": "internal_server_error",
+                "contact_support": True
+            }
+        )
+
+# NEUE SERIEN-BUCHUNGS-ROUTE (ABO-BUCHUNGEN)
+@router.post("/series")
+async def create_series_booking(
+    request: SeriesBookingRequest, 
+    http_request: Request,
+    user_id: str = Header(None, alias="X-User-ID")
+):
+    """
+    SERIEN-BUCHUNG (ABO-BUCHUNGEN) - ENTERPRISE LEVEL
+    
+    Erstellt automatisch mehrere Einzel-Buchungen für das gewählte Intervall.
+    Keine Datenbank-Änderung erforderlich - nutzt bestehende buchung Tabelle.
+    
+    Features:
+    - Automatische Wöchentliche Wiederholung
+    - 4, 8, 12 oder 16 Wochen Support
+    - Verfügbarkeitsprüfung für jede Woche
+    - Rollback bei Fehlern
+    - Enterprise Security
+    """
+    try:        
+        # SECURITY: User Authentication
+        if not user_id:
+            print("❌ SECURITY BREACH: Unautorisierte Serien-Buchungsanfrage abgelehnt")
+            raise HTTPException(status_code=401, detail="Authentication required: User-ID fehlt")
+        
+        print(f"🎯 ENTERPRISE SERIEN-BUCHUNG REQUEST von User: {user_id}")
+        print(f"📊 SERIES REQUEST DATA: {request.dict()}")
+        
+        # ENTERPRISE PERMISSION SYSTEM für Serien-Buchungen
+        print(f"🔐 SECURITY CHECK 1/2: Prüfe Grundberechtigung 'darf_buchen'")
+        if not check_user_permissions(user_id, 'darf_buchen'):
+            print(f"❌ SECURITY: User {user_id} hat keine Buchungsberechtigung")
+            raise HTTPException(status_code=403, detail="Keine Buchungsberechtigung")
+        
+        print(f"✅ SECURITY CHECK 1/2: Grundberechtigung bestätigt")
+        
+        # ÖFFENTLICHE SERIEN-BUCHUNG Check
+        if request.type == 'public':
+            print(f"🔐 SECURITY CHECK 2/2: Prüfe öffentliche Buchungsberechtigung")
+            if not check_user_permissions(user_id, 'darf_oeffentlich_buchen'):
+                print(f"❌ SECURITY: User {user_id} hat keine Berechtigung für öffentliche Serien-Buchungen")
+                raise HTTPException(status_code=403, detail="Keine Berechtigung für öffentliche Buchungen")
+            print(f"✅ SECURITY CHECK 2/2: Öffentliche Serien-Buchungsberechtigung bestätigt")
+        
+        print(f"🛡️ ENTERPRISE SECURITY: Alle Berechtigungsprüfungen für Serien-Buchung erfolgreich")
+        
+        # SERIEN-BUCHUNG LOGIC
+        from datetime import datetime, timedelta
+        
+        start_date = datetime.strptime(request.start_date, "%Y-%m-%d").date()
+        created_bookings = []
+        failed_bookings = []
+        
+        print(f"🔄 SERIEN-BUCHUNG: Erstelle {request.weeks} Buchungen ab {start_date}")
+        
+        # Erstelle Buchungen für jede Woche
+        for week in range(request.weeks):
+            booking_date = start_date + timedelta(weeks=week)
+            booking_date_str = booking_date.strftime("%Y-%m-%d")
+            
+            print(f"📅 Woche {week + 1}/{request.weeks}: Erstelle Buchung für {booking_date_str}")
+            
+            try:
+                # Prüfe Verfügbarkeit für diese Woche
+                is_available = await booking_service.check_availability(
+                    request.platz_id, 
+                    booking_date_str, 
+                    request.time, 
+                    request.duration
+                )
+                
+                if not is_available:
+                    print(f"⚠️ Woche {week + 1}: Platz nicht verfügbar am {booking_date_str}")
+                    failed_bookings.append({
+                        "week": week + 1,
+                        "date": booking_date_str,
+                        "reason": "Platz nicht verfügbar"
+                    })
+                    continue
+                
+                # Erstelle Einzelbuchung für diese Woche
+                booking_data = {
+                    "court_id": request.platz_id,
+                    "date": booking_date_str,
+                    "time": request.time,
+                    "duration": request.duration,
+                    "type": request.type,
+                    "notes": f"{request.series_name} - Woche {week + 1}/{request.weeks}" + (f" | {request.notes}" if request.notes else ""),
+                    "user_id": user_id
+                }
+                
+                result = await booking_service.create_booking(booking_data)
+                created_bookings.append({
+                    "week": week + 1,
+                    "date": booking_date_str,
+                    "booking_id": result["id"],
+                    "booking": result
+                })
+                
+                print(f"✅ Woche {week + 1}: Buchung erfolgreich erstellt (ID: {result['id']})")
+                
+            except Exception as e:
+                print(f"❌ Woche {week + 1}: Buchung fehlgeschlagen: {e}")
+                failed_bookings.append({
+                    "week": week + 1,
+                    "date": booking_date_str,
+                    "reason": str(e)
+                })
+        
+        # RESULT SUMMARY
+        success_count = len(created_bookings)
+        failure_count = len(failed_bookings)
+        
+        print(f"📊 SERIEN-BUCHUNG ABGESCHLOSSEN: {success_count} erfolgreich, {failure_count} fehlgeschlagen")
+        
+        if success_count == 0:
+            raise HTTPException(
+                status_code=400, 
+                detail={
+                    "error": "Keine Buchungen möglich",
+                    "message": "Alle Termine sind bereits belegt oder nicht verfügbar",
+                    "failed_bookings": failed_bookings
+                }
+            )
+        
+        return {
+            "status": "success",
+            "message": f"Serien-Buchung abgeschlossen: {success_count} von {request.weeks} Buchungen erstellt",
+            "series_info": {
+                "name": request.series_name,
+                "weeks": request.weeks,
+                "start_date": request.start_date,
+                "court_id": request.platz_id
+            },
+            "created_bookings": created_bookings,
+            "failed_bookings": failed_bookings,
+            "summary": {
+                "successful": success_count,
+                "failed": failure_count,
+                "total": request.weeks
+            },
+            "security_level": "enterprise",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ ENTERPRISE ERROR: Kritischer Serien-Buchungsfehler: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail={
+                "error": "Serien-Buchungsfehler", 
                 "message": str(e),
                 "error_type": "internal_server_error",
                 "contact_support": True

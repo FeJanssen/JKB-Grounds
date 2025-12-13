@@ -30,67 +30,65 @@ export const PermissionProvider = ({ children }) => {
     try {
       console.log('🔐 STEP 1: Starte Permission Loading...');
       
-      // SCHRITT 1: User-ID aus AsyncStorage
-      // ✅ KONSISTENTE USER-ID SUCHE  
-      let userId = await AsyncStorage.getItem('userId') || // ← Hauptkey
-                   await AsyncStorage.getItem('user_id');  // ← Fallback
+      // SCHRITT 1: User-Daten direkt aus AsyncStorage laden (wurden beim Login gespeichert)
+      const currentUserData = await AsyncStorage.getItem('currentUser');
       
-      if (!userId) {
-        throw new Error('Keine User-ID gefunden');
+      if (!currentUserData) {
+        throw new Error('Keine User-Daten im Storage gefunden - bitte neu einloggen');
       }
       
-      console.log('👤 STEP 2: User-ID gefunden:', userId);
-
-      // SCHRITT 2: User-Daten laden
-      const userResponse = await fetch(`${API_BASE_URL}/api/auth/user/${userId}`);
+      const userData = JSON.parse(currentUserData);
+      console.log('👤 STEP 2: User-Daten aus AsyncStorage:', userData);
       
-      if (!userResponse.ok) {
-        throw new Error(`User-API Fehler: ${userResponse.status}`);
-      }
-      
-      const userData = await userResponse.json();
-      console.log('👤 STEP 3: User-Daten erhalten:', userData);
-      
-      if (!userData.rolle_id || !userData.verein_id) {
-        throw new Error('User-Daten unvollständig (rolle_id oder verein_id fehlt)');
+      // Validierung der benötigten Felder
+      if (!userData.id || !userData.rolle_id || !userData.verein_id) {
+        throw new Error('User-Daten unvollständig (id, rolle_id oder verein_id fehlt)');
       }
 
-      // SCHRITT 3: Rechte für diese Kombination laden
-      console.log(`🔐 STEP 4: Lade Rechte für Verein: ${userData.verein_id}, Rolle: ${userData.rolle_id}`);
+      // SCHRITT 2: Rechte für diese Kombination laden
+      console.log(`🔐 STEP 3: Lade Rechte für Verein: ${userData.verein_id}, Rolle: ${userData.rolle_id}`);
       
       const rechteResponse = await fetch(
         `${API_BASE_URL}/api/permissions/rechte/${userData.verein_id}/${userData.rolle_id}`
       );
       
       if (!rechteResponse.ok) {
-        console.log('⚠️ STEP 4 FEHLER: Rechte-API nicht verfügbar, verwende Fallback');
+        console.log('⚠️ STEP 3 FEHLER: Rechte-API nicht verfügbar, verwende Fallback basierend auf Rolle');
         
-        // FALLBACK: Grundberechtigungen
+        // INTELLIGENTER FALLBACK basierend auf Role Name falls verfügbar
+        const isAdmin = userData.rolle_name && userData.rolle_name.toLowerCase().includes('admin');
+        
         setPermissions({
           darf_buchen: true,
-          darf_oeffentlich_buchen: false,
+          darf_oeffentlich_buchen: isAdmin, // Admins dürfen öffentlich buchen
           loaded: true
         });
         
         setUserInfo({
-          userId: userId,
+          userId: userData.id,
           vereinId: userData.verein_id,
           rolleId: userData.rolle_id,
-          rolleName: 'Unbekannt'
+          rolleName: userData.rolle_name || 'Unbekannt'
+        });
+        
+        console.log('✅ FALLBACK: Permissions gesetzt basierend auf lokalen Daten:', {
+          darf_buchen: true,
+          darf_oeffentlich_buchen: isAdmin,
+          rolle: userData.rolle_name
         });
         
         return;
       }
       
       const rechteData = await rechteResponse.json();
-      console.log('🔐 STEP 5: Rechte-Daten erhalten:', rechteData);
+      console.log('🔐 STEP 4: Rechte-Daten erhalten:', rechteData);
 
-      // SCHRITT 4: State aktualisieren
+      // SCHRITT 3: State aktualisieren
       setUserInfo({
-        userId: userId,
+        userId: userData.id,
         vereinId: userData.verein_id,
         rolleId: userData.rolle_id,
-        rolleName: rechteData.rolle_name || 'Unbekannt'
+        rolleName: rechteData.rolle_name || userData.rolle_name || 'Unbekannt'
       });
 
       setPermissions({
@@ -99,7 +97,7 @@ export const PermissionProvider = ({ children }) => {
         loaded: true
       });
 
-      console.log('✅ STEP 6: Permissions erfolgreich gesetzt:', {
+      console.log('✅ STEP 5: Permissions erfolgreich gesetzt:', {
         darf_buchen: rechteData.darf_buchen,
         darf_oeffentlich_buchen: rechteData.darf_oeffentlich_buchen,
         rolle: rechteData.rolle_name
@@ -108,7 +106,7 @@ export const PermissionProvider = ({ children }) => {
     } catch (error) {
       console.error('❌ PERMISSION FEHLER:', error);
       
-      // Fallback bei Fehlern
+      // ULTRA-FALLBACK bei allen Fehlern
       setPermissions({
         darf_buchen: true,           // Jeder darf basic buchen
         darf_oeffentlich_buchen: false, // Aber nicht öffentlich
@@ -121,6 +119,8 @@ export const PermissionProvider = ({ children }) => {
         rolleId: null,
         rolleName: 'Fehler'
       });
+
+      console.log('🆘 ULTRA-FALLBACK: Basis-Permissions gesetzt');
     }
   };
 

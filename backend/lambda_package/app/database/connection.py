@@ -12,3 +12,7 @@ print("SUPABASE_URL:", supabase_url)
 print("SUPABASE_KEY:", supabase_key)
 
 supabase: Client = create_client(supabase_url, supabase_key)
+
+def get_supabase_client() -> Client:
+    """Returns the Supabase client instance"""
+    return supabase

@@ -45,35 +45,19 @@ class AuthService:
         return encoded_jwt
 
 
-    async def verify_club_password(self, verein_id: str, vereinspasswort: str) -> bool:
-        """Vereinspasswort überprüfen"""
-        try:
-            print(f"DEBUG: Überprüfe Verein ID: {verein_id}")
-            print(f"DEBUG: Eingegebenes Passwort: {vereinspasswort}")
-            
-            result = supabase.table("verein").select("vereinspasswort").eq("id", verein_id).execute()
-            print(f"DEBUG: Supabase Result: {result.data}")
-            
-            if result.data:
-                db_password = result.data[0]["vereinspasswort"]
-                print(f"DEBUG: Passwort aus DB: {db_password}")
-                is_match = db_password == vereinspasswort
-                print(f"DEBUG: Passwort stimmt überein: {is_match}")
-                return is_match
-            else:
-                print(f"DEBUG: Kein Verein mit ID {verein_id} gefunden")
-                return False
-        except Exception as e:
-            print(f"Fehler bei Vereinspasswort-Verifikation: {e}")
-            return False
+
 
 
     async def register_user(self, user_data: UserCreate) -> Optional[Token]:
         """Neuen Benutzer registrieren"""
         try:
-            # Vereinspasswort überprüfen
-            if not await self.verify_club_password(user_data.verein_id, user_data.vereinspasswort):
-                raise ValueError("Ungültiges Vereinspasswort")
+            # Verein ID durch Namen nachschlagen
+            verein_result = supabase.table("verein").select("id").eq("name", user_data.vereinsname).execute()
+            if not verein_result.data:
+                raise ValueError(f"Verein '{user_data.vereinsname}' nicht gefunden")
+            
+            verein_id = verein_result.data[0]["id"]
+            print(f"DEBUG: Verein '{user_data.vereinsname}' gefunden mit ID: {verein_id}")
 
             # Passwort hashen
             hashed_password = self.hash_password(user_data.password)
@@ -92,7 +76,7 @@ class AuthService:
                 "passwort": hashed_password,
                 "ist_bestaetigt": False,  # Benötigt Admin-Freigabe
                 "rolle_id": rolle_id,
-                "verein_id": user_data.verein_id,
+                "verein_id": verein_id,
                 "geschlecht": user_data.geschlecht
             }
 

@@ -19,9 +19,15 @@ const BookingScreen = ({ navigation }) => {
   const [courts, setCourts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [viewMode, setViewMode] = useState('calendar');
   const [currentUserId, setCurrentUserId] = useState(null);
   const [currentVereinId, setCurrentVereinId] = useState(null);
+  
+  // ✅ NAVIGATION STATES - Aus BookingCalendar hierher verschoben
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [courtStartIndex, setCourtStartIndex] = useState(0);
+  
+  // ✅ CONSTANTS
+  const COURTS_PER_VIEW = 3;
 
   useEffect(() => {
     initializeScreen();
@@ -31,56 +37,34 @@ const BookingScreen = ({ navigation }) => {
     try {
       console.log('🚀 ENTERPRISE: Initialisiere BookingScreen');
       
-      // 1. ERST Permissions laden
+      // 1. ERST Permissions laden (verwendet jetzt lokale Daten)
       await loadUserPermissions();
       
-      // 2. User-ID aus AsyncStorage laden
-      // ✅ KONSISTENTE USER-ID SUCHE
-      let userId = await AsyncStorage.getItem('userId'); // ← Hauptkey
-      if (!userId) {
-        userId = await AsyncStorage.getItem('user_id'); // ← Fallback
-      }
-      if (!userId) {
-        userId = await AsyncStorage.getItem('userId');
-      }
-      if (!userId) {
-        userId = await AsyncStorage.getItem('currentUserId');
-      }
+      // 2. User-Daten direkt aus AsyncStorage laden (bereits beim Login gespeichert)
+      const currentUserData = await AsyncStorage.getItem('currentUser');
       
-      console.log('👤 ENTERPRISE: User-ID gefunden:', userId);
-      
-      if (!userId) {
+      if (!currentUserData) {
         throw new Error('Session ungültig - bitte neu einloggen');
       }
       
-      // 3. User-Daten laden
-      const userUrl = `https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws/api/auth/user/${userId}`;
-      console.log('🔍 FRONTEND: Versuche User-Daten zu laden von:', userUrl);
+      const userData = JSON.parse(currentUserData);
+      console.log('� ENTERPRISE: User-Daten aus AsyncStorage:', userData);
       
-      const userResponse = await fetch(userUrl);
-      
-      if (!userResponse.ok) {
-        const errorText = await userResponse.text();
-        console.log('❌ FRONTEND: Error Response Text:', errorText);
-        throw new Error(`HTTP ${userResponse.status}: ${errorText}`);
+      if (!userData.id || !userData.verein_id) {
+        throw new Error('User-Daten unvollständig (ID oder Verein fehlt)');
       }
       
-      const userData = await userResponse.json();
-      console.log('✅ FRONTEND: User-Daten erhalten:', userData);
-      
-      if (!userData.verein_id) {
-        throw new Error('Keine Vereinszugehörigkeit gefunden');
-      }
-      
-      // 4. Speichere IDs für zukünftige Verwendung
-      await AsyncStorage.setItem('verein_id', userData.verein_id);
-      
-      setCurrentUserId(userId);
+      // 3. IDs setzen
+      setCurrentUserId(userData.id);
       setCurrentVereinId(userData.verein_id);
       
-      console.log('🏢 ENTERPRISE: Verein-ID gesetzt:', userData.verein_id);
+      // Zusätzlich für andere Komponenten speichern
+      await AsyncStorage.setItem('userId', userData.id);
+      await AsyncStorage.setItem('verein_id', userData.verein_id);
       
-      // 5. DANN Courts laden
+      console.log('✅ ENTERPRISE: IDs gesetzt - User:', userData.id, 'Verein:', userData.verein_id);
+      
+      // 4. DANN Courts laden
       await loadCourts(userData.verein_id);
       
       console.log('✅ ENTERPRISE: BookingScreen erfolgreich initialisiert');
@@ -227,6 +211,62 @@ const BookingScreen = ({ navigation }) => {
     }
   };
 
+  // ✅ NAVIGATION FUNKTIONEN - Aus BookingCalendar hierher verschoben
+  const formatDate = (date) => {
+    return date.toLocaleDateString('de-DE', {
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const goToPreviousDay = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() - 1);
+    setSelectedDate(newDate);
+  };
+
+  const goToNextDay = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + 1);
+    setSelectedDate(newDate);
+  };
+
+  const goToToday = () => {
+    setSelectedDate(new Date());
+  };
+
+  const goToPreviousWeek = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() - 7);
+    setSelectedDate(newDate);
+  };
+
+  const goToNextWeek = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + 7);
+    setSelectedDate(newDate);
+  };
+
+  // Court Navigation Funktionen
+  const visibleCourts = courts.slice(courtStartIndex, courtStartIndex + COURTS_PER_VIEW);
+  
+  const goToPreviousCourts = () => {
+    if (courtStartIndex > 0) {
+      setCourtStartIndex(courtStartIndex - 1);
+    }
+  };
+
+  const goToNextCourts = () => {
+    if (courtStartIndex + COURTS_PER_VIEW < courts.length) {
+      setCourtStartIndex(courtStartIndex + 1);
+    }
+  };
+
+  const canShowPreviousCourts = courtStartIndex > 0;
+  const canShowNextCourts = courtStartIndex + COURTS_PER_VIEW < courts.length;
+
   // ✅ LOADING STATE mit Overlay wie im CRM
   if (loading || !isPermissionsLoaded()) {
     return (
@@ -243,124 +283,75 @@ const BookingScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* ✅ FIXED HEADER wie im CRM */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Platzbuchung</Text>
-      </View>
+      {/* ✅ FIXED NAVIGATION - Genau wie der rote Header, aber für Navigation */}
+      <View style={styles.navigationHeader}>
+        {/* Datums-Navigation */}
+        <View style={styles.dateNavigationSection}>
+          <Text style={styles.navigationTitle}>Buchungskalender</Text>
+          <View style={styles.dateNavigation}>
+            {/* WOCHENSPRUNG RÜCKWÄRTS */}
+            <TouchableOpacity style={styles.weekNavButton} onPress={goToPreviousWeek}>
+              <Text style={styles.weekNavButtonText}>←←</Text>
+            </TouchableOpacity>
+            {/* TAGESSPRUNG RÜCKWÄRTS */}
+            <TouchableOpacity style={styles.navButton} onPress={goToPreviousDay}>
+              <Text style={styles.navButtonText}>←</Text>
+            </TouchableOpacity>
+            {/* DATUM (HEUTE) */}
+            <TouchableOpacity style={styles.dateContainer} onPress={goToToday}>
+              <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
+            </TouchableOpacity>
+            {/* TAGESSPRUNG VORWÄRTS */}
+            <TouchableOpacity style={styles.navButton} onPress={goToNextDay}>
+              <Text style={styles.navButtonText}>→</Text>
+            </TouchableOpacity>
+            {/* WOCHENSPRUNG VORWÄRTS */}
+            <TouchableOpacity style={styles.weekNavButton} onPress={goToNextWeek}>
+              <Text style={styles.weekNavButtonText}>→→</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      {/* ✅ VIEW MODE SELECTOR zwischen Header und Content */}
-      <View style={styles.viewSelector}>
-        <TouchableOpacity 
-          style={[styles.viewButton, viewMode === 'calendar' && styles.activeViewButton]}
-          onPress={() => setViewMode('calendar')}
-        >
-          <Text style={[styles.viewButtonText, viewMode === 'calendar' && styles.activeViewButtonText]}>
-            Kalender
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.viewButton, viewMode === 'list' && styles.activeViewButton]}
-          onPress={() => setViewMode('list')}
-        >
-          <Text style={[styles.viewButtonText, viewMode === 'list' && styles.activeViewButtonText]}>
-            Liste
-          </Text>
-        </TouchableOpacity>
+        {/* Plätze-Navigation */}
+        {courts.length > COURTS_PER_VIEW && (
+          <View style={styles.courtNavigation}>
+            <TouchableOpacity 
+              style={[styles.courtNavButton, !canShowPreviousCourts && styles.courtNavButtonDisabled]}
+              onPress={goToPreviousCourts}
+              disabled={!canShowPreviousCourts}
+            >
+              <Text style={styles.courtNavButtonText}>←</Text>
+            </TouchableOpacity>
+            
+            <Text style={styles.courtNavInfo}>
+              Plätze {courtStartIndex + 1}-{Math.min(courtStartIndex + COURTS_PER_VIEW, courts.length)} von {courts.length}
+            </Text>
+            
+            <TouchableOpacity 
+              style={[styles.courtNavButton, !canShowNextCourts && styles.courtNavButtonDisabled]}
+              onPress={goToNextCourts}
+              disabled={!canShowNextCourts}
+            >
+              <Text style={styles.courtNavButtonText}>→</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {/* ✅ CONTENT - MIT ScrollView für korrekte Web-Scroll-Behandlung */}
-      {viewMode === 'calendar' ? (
-        // KALENDER-ANSICHT - Einfache ScrollView wie SettingsScreen
-        <ScrollView 
-          style={styles.scrollableContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <BookingCalendar 
-            courts={courts} 
-            onBooking={handleBooking}
-            canBookPublic={canBookPublic()}
-            vereinId={currentVereinId}
-            userId={currentUserId}  // ✅ User-ID weiterleiten
-          />
-        </ScrollView>
-      ) : (
-        // ✅ LISTEN-ANSICHT - Einfache ScrollView wie SettingsScreen
-        <ScrollView 
-          style={styles.scrollableContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={styles.subtitle}>
-            {courts.length > 0 
-              ? `${courts.length} Plätze verfügbar` 
-              : 'Keine Plätze verfügbar'
-            }
-          </Text>
-          
-          {/* Courts List */}
-          {courts.length > 0 ? (
-            courts.map((court) => (
-              <View key={court.id} style={styles.courtCard}>
-                <Text style={styles.courtName}>{court.name}</Text>
-                <Text style={styles.courtDetails}>{court.platztyp}</Text>
-                <Text style={styles.courtTimes}>
-                  Buchbar: {court.buchbar_von || '07:00'} - {court.buchbar_bis || '22:00'}
-                </Text>
-                
-                {/* Private Buchung - nur wenn berechtigt */}
-                {canBook() ? (
-                  <TouchableOpacity
-                    style={styles.bookButton}
-                    onPress={() => handleBooking(court.id, '2025-07-02T10:00', false)}
-                  >
-                    <Text style={styles.bookButtonText}>Private Buchung (Test)</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={styles.disabledButton}>
-                    <Text style={styles.disabledButtonText}>Keine Buchungsberechtigung</Text>
-                  </View>
-                )}
-                
-                {/* Öffentliche Buchung - nur wenn berechtigt */}
-                {canBookPublic() ? (
-                  <TouchableOpacity
-                    style={[styles.bookButton, styles.publicBookButton]}
-                    onPress={() => handleBooking(court.id, '2025-07-02T11:00', true)}
-                  >
-                    <Text style={styles.bookButtonText}>Öffentliche Buchung (Test)</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={[styles.disabledButton, styles.disabledPublicButton]}>
-                    <Text style={styles.disabledButtonText}>Keine öffentliche Buchungsberechtigung</Text>
-                  </View>
-                )}
-              </View>
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Keine Plätze verfügbar</Text>
-              <Text style={styles.emptyText}>
-                Momentan sind keine Plätze für die Buchung verfügbar.
-              </Text>
-              <TouchableOpacity style={styles.retryButton} onPress={() => loadCourts()}>
-                <Text style={styles.retryButtonText}>Erneut versuchen</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          
-          {/* Switch to Calendar Hint */}
-          <View style={styles.switchHint}>
-            <Text style={styles.switchHintText}>
-              Tipp: Nutzen Sie die Kalender-Ansicht für eine bessere Übersicht
-            </Text>
-            <TouchableOpacity 
-              style={styles.switchButton}
-              onPress={() => setViewMode('calendar')}
-            >
-              <Text style={styles.switchButtonText}>Zu Kalender wechseln</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      )}
+      <ScrollView 
+        style={styles.scrollableContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <BookingCalendar 
+          courts={visibleCourts} 
+          onBooking={handleBooking}
+          canBookPublic={canBookPublic()}
+          vereinId={currentVereinId}
+          userId={currentUserId}  
+          selectedDate={selectedDate} // ✅ Ausgewähltes Datum weiterleiten
+        />
+      </ScrollView>
     </View>
   );
 };
@@ -387,48 +378,102 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
   },
-  // ✅ FIXED HEADER wie im CRM
-  header: {
-    backgroundColor: '#DC143C',
-    paddingTop: 45,
+  // ✅ FIXED NAVIGATION HEADER - Wie der rote Header, aber für Navigation  
+  navigationHeader: {
+    backgroundColor: '#fff',
+    paddingTop: 45, // ✅ SafeArea-Kompatibel wie der rote Header
     paddingBottom: 15,
     paddingHorizontal: 20,
-    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  headerTitle: {
+  dateNavigationSection: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  navigationTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#333',
+    marginBottom: 16,
+    textAlign: 'center',
   },
-  // ✅ VIEW SELECTOR zwischen Header und Content
-  viewSelector: {
+  dateNavigation: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  viewButton: {
-    flex: 1,
-    paddingVertical: 12,
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  navButton: {
+    padding: 10,
     backgroundColor: '#f0f0f0',
-    marginHorizontal: 5,
     borderRadius: 8,
+    marginHorizontal: 3,
   },
-  activeViewButton: {
-    backgroundColor: '#DC143C',
-  },
-  viewButtonText: {
+  navButtonText: {
     fontSize: 16,
-    color: '#666',
-    fontWeight: '600',
+    fontWeight: 'bold',
+    color: '#333',
   },
-  activeViewButtonText: {
+  weekNavButton: {
+    padding: 10,
+    backgroundColor: '#DC143C',
+    borderRadius: 8,
+    marginHorizontal: 2,
+    minWidth: 45,
+  },
+  weekNavButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
     color: '#fff',
+    textAlign: 'center',
   },
-  // ✅ CONTENT CONTAINER für beide Ansichten
+  dateContainer: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  dateText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    minWidth: 160,
+  },
+  courtNavigation: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  courtNavButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#2E8B57',
+    borderRadius: 6,
+  },
+  courtNavButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  courtNavButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  courtNavInfo: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  // ✅ CONTENT CONTAINER
   contentContainer: {
     flex: 1,
   },
@@ -441,129 +486,7 @@ const styles = StyleSheet.create({
     overflow: 'auto',       // ✅ Eigenes Scrolling
     maxHeight: '90vh',      // ✅ Max-Height Begrenzung
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-    fontWeight: '600',
-  },
-  courtCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  courtName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    color: '#333',
-  },
-  courtDetails: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  courtTimes: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 12,
-  },
-  bookButton: {
-    backgroundColor: '#DC143C',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  publicBookButton: {
-    backgroundColor: '#FF6B35',
-  },
-  bookButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  disabledButton: {
-    backgroundColor: '#f0f0f0',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  disabledPublicButton: {
-    borderColor: '#ffcccc',
-    backgroundColor: '#fff5f5',
-  },
-  disabledButtonText: {
-    color: '#999',
-    fontWeight: '500',
-    fontSize: 14,
-  },
-  emptyState: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 24,
-  },
-  retryButton: {
-    backgroundColor: '#DC143C',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  switchHint: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 20,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderStyle: 'dashed',
-  },
-  switchHintText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 12,
-    fontStyle: 'italic',
-  },
-  switchButton: {
-    backgroundColor: '#DC143C',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  switchButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
+
 });
 
 export default BookingScreen;

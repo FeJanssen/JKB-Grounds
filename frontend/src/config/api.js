@@ -39,7 +39,7 @@ export const API_URLS = {
   USER_ROLE: (userId) => `${API_CONFIG.BASE_URL}/api/users/${userId}/role`,
   
   // Roles & Permissions
-  ROLES: `${API_CONFIG.BASE_URL}/api/roles`,
+  ROLES: `${API_CONFIG.BASE_URL}/api/roles/list`,
   PERMISSIONS_BY_VEREIN: (vereinId) => `${API_CONFIG.BASE_URL}/api/permissions/verein/${vereinId}`,
   PERMISSIONS_TOGGLE: `${API_CONFIG.BASE_URL}/api/permissions/toggle`,
   PERMISSIONS_RECHTE: (vereinId, rolleId) => `${API_CONFIG.BASE_URL}/api/permissions/rechte/${vereinId}/${rolleId}`,

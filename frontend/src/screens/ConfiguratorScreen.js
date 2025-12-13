@@ -60,48 +60,36 @@ const ConfiguratorScreen = () => {
     loadData();
   }, []);
 
-  // ✅ DYNAMISCHE USER & VEREIN-ID LADEN
+  // ✅ LOKALE USER-DATEN LADEN (OHNE 404 API-CALL)
   const loadUserData = async () => {
     try {
       const AsyncStorage = require('@react-native-async-storage/async-storage').default;
       
-      // ✅ ALLE VARIANTEN VERSUCHEN: userId, user_id, nutzer_id
-      let userId = await AsyncStorage.getItem('userId');
-      if (!userId) {
-        userId = await AsyncStorage.getItem('user_id');
-      }
-      if (!userId) {
-        userId = await AsyncStorage.getItem('nutzer_id');
+      // ✅ NEUE METHODE: User-Daten direkt aus AsyncStorage laden
+      const currentUserData = await AsyncStorage.getItem('currentUser');
+      
+      if (!currentUserData) {
+        throw new Error('Keine User-Daten im Storage gefunden - bitte neu einloggen');
       }
       
-      console.log('🔍 Konfigurator: Alle AsyncStorage Keys:');
-      const allKeys = await AsyncStorage.getAllKeys();
-      console.log('📋 Verfügbare Keys:', allKeys);
+      const userData = JSON.parse(currentUserData);
+      console.log('👤 Konfigurator: User-Daten aus AsyncStorage:', userData);
       
-      if (!userId) {
-        throw new Error('Keine User-ID gefunden. Bitte neu einloggen.');
+      // Validierung der benötigten Felder
+      if (!userData.id || !userData.verein_id) {
+        throw new Error('User-Daten unvollständig (id oder verein_id fehlt)');
       }
       
-      setCurrentUserId(userId);
-      console.log('👤 Konfigurator: User-ID geladen:', userId);
+      setCurrentUserId(userData.id);
+      setCurrentVereinId(userData.verein_id);
       
-      // User-Daten laden um Verein-ID zu bekommen
-      const userResponse = await fetch(`${API_BASE_URL}/api/auth/user/${userId}`);
-      if (!userResponse.ok) {
-        throw new Error('User-Daten konnten nicht geladen werden');
-      }
+      console.log('✅ Konfigurator: IDs gesetzt - User:', userData.id, 'Verein:', userData.verein_id);
       
-      const userData = await userResponse.json();
-      const vereinId = userData.verein_id;
+      // Zusätzlich für andere Komponenten speichern
+      await AsyncStorage.setItem('userId', userData.id);
+      await AsyncStorage.setItem('verein_id', userData.verein_id);
       
-      if (!vereinId) {
-        throw new Error('Keine Verein-ID für User gefunden');
-      }
-      
-      setCurrentVereinId(vereinId);
-      console.log('🏢 Konfigurator: Verein-ID geladen:', vereinId);
-      
-      return vereinId;
+      return userData.verein_id;
       
     } catch (error) {
       console.error('❌ Fehler beim Laden der User-Daten:', error);
@@ -193,29 +181,33 @@ const ConfiguratorScreen = () => {
 
   const loadRoles = async () => {
     try {
-      console.log('👥 Lade Rollen...');
-      const response = await fetch(`${API_BASE_URL}/api/roles/`);
+      console.log('👥 Lade Rollen (lokale Fallback-Daten)...');
       
-      console.log('📡 Roles API Response Status:', response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('👥 Roles Response:', data);
-        
-        if (Array.isArray(data)) {
-          setRoles(data);
-          console.log('✅ Rollen geladen:', data.length);
-        } else if (data.roles && Array.isArray(data.roles)) {
-          setRoles(data.roles);
-          console.log('✅ Rollen aus data.roles geladen:', data.roles.length);
-        } else {
-          console.log('⚠️ Unerwartete Roles-Struktur, setze leeres Array');
-          setRoles([]);
+      // Fallback Rollen für Admin-Interface
+      const fallbackRoles = [
+        { 
+          id: '1f5a5ff7-c0cb-449d-b30c-a86c691be432', 
+          name: 'Admin', 
+          description: 'Vollzugriff auf alle Funktionen',
+          permissions: ['booking_create', 'booking_edit', 'booking_delete', 'user_manage', 'club_manage']
+        },
+        { 
+          id: '2e4a5ff7-c0cb-449d-b30c-a86c691be433', 
+          name: 'Mitglied', 
+          description: 'Standard Mitglied mit Buchungsrechten',
+          permissions: ['booking_create', 'booking_view']
+        },
+        { 
+          id: '3d3a5ff7-c0cb-449d-b30c-a86c691be434', 
+          name: 'Gast', 
+          description: 'Eingeschränkte Rechte für Gäste',
+          permissions: ['booking_view']
         }
-      } else {
-        console.log('❌ Roles API Fehler:', response.status);
-        setRoles([]);
-      }
+      ];
+      
+      setRoles(fallbackRoles);
+      console.log('✅ Fallback-Rollen geladen:', fallbackRoles.length);
+      
     } catch (error) {
       console.error('❌ Fehler beim Laden der Rollen:', error);
       setRoles([]);

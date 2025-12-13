@@ -10,6 +10,25 @@ class PermissionToggleRequest(BaseModel):
     recht_key: str
     ist_aktiv: bool
 
+@router.get("/verein/{verein_id}")
+async def get_permissions_by_verein(verein_id: str):
+    """Berechtigungen für einen Verein laden - für ConfiguratorScreen"""
+    try:
+        print(f"🔐 Lade Berechtigungen für Verein: {verein_id}")
+        
+        response = supabase.table("recht").select("*").eq("verein_id", verein_id).execute()
+        
+        print(f"📊 Gefundene Berechtigungen: {len(response.data) if response.data else 0}")
+        
+        return {
+            "status": "success", 
+            "permissions": response.data or []
+        }
+        
+    except Exception as e:
+        print(f"❌ Fehler beim Laden der Berechtigungen: {e}")
+        raise HTTPException(status_code=500, detail="Fehler beim Laden der Berechtigungen")
+
 # ✅ NEU: Die Hauptfunktion für das Frontend Permission System
 @router.get("/rechte/{verein_id}/{rolle_id}")
 async def get_rechte(verein_id: str, rolle_id: str):

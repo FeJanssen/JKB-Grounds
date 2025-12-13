@@ -26,6 +26,10 @@ const BookingModal = ({
   const [isPublic, setIsPublic] = useState(false);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // ✅ SERIEN-BUCHUNG STATES
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringWeeks, setRecurringWeeks] = useState(8); // Default 8 Wochen
 
   const calculateEndTime = (startTime, durationMinutes) => {
     const [hours, minutes] = startTime.split(':').map(Number);
@@ -65,14 +69,20 @@ const BookingModal = ({
 
       setLoading(true);
 
-      // ✅ KORREKTE API-STRUKTUR mit dynamischer Verein-ID
+      // ✅ KORREKTE API-STRUKTUR mit SERIEN-BUCHUNG
       const bookingData = {
         platz_id: court.id,  // ✅ Korrigiert: platz_id statt court_id (Backend erwartet platz_id)
         date: selectedDate, // ✅ Sollte bereits im Format YYYY-MM-DD sein
         time: selectedTime, // ✅ Änderung: Ohne :00 (Backend fügt das hinzu)
         duration: parseInt(duration),
         type: isPublic ? 'public' : 'private', // ✅ DYNAMISCH: Abhängig vom Toggle
-        notes: notes || ''  // ✅ Leerer String falls keine Notizen
+        notes: notes || '',  // ✅ Leerer String falls keine Notizen
+        // ✅ SERIEN-BUCHUNG INFO - Bei aktivierter Serien-Buchung (private UND public)
+        ...(isRecurring && {
+          is_recurring: true,
+          recurring_weeks: recurringWeeks,
+          series_name: `${court.name} - ${getWeekdayName(selectedDate)} Training`
+        })
       };
 
       console.log('📤 BookingModal: FINALE Buchungsdaten:', JSON.stringify(bookingData, null, 2));
@@ -86,6 +96,8 @@ const BookingModal = ({
       setDuration('60');
       setIsPublic(false);
       setNotes('');
+      setIsRecurring(false);
+      setRecurringWeeks(8);
       
     } catch (error) {
       Alert.alert('Buchungsfehler', error.message);
@@ -94,12 +106,37 @@ const BookingModal = ({
     }
   };
 
+  // ✅ HILFSFUNKTIONEN für Serien-Buchung
+  const calculateEndDate = (startDate, weeks) => {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + (weeks - 1) * 7);
+    return date.toLocaleDateString('de-DE', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const getWeekdayName = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('de-DE', { weekday: 'long' });
+  };
+
   // ✅ Automatisch private setzen wenn keine öffentliche Berechtigung
   React.useEffect(() => {
     if (!canBookPublic && isPublic) {
       setIsPublic(false);
     }
   }, [canBookPublic]);
+
+  // ✅ Reset Serien-Buchung wenn Modal schließt
+  React.useEffect(() => {
+    if (!visible) {
+      setIsRecurring(false);
+      setRecurringWeeks(8);
+    }
+  }, [visible]);
 
   if (!court) return null;
 
@@ -222,6 +259,99 @@ const BookingModal = ({
                 </View>
               </View>
             </View>
+
+            {/* ✅ SERIEN-BUCHUNG (ABO) - Nur bei öffentlicher Buchung */}
+            {isPublic && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>� Serien-Buchung (Abo)</Text>
+                <Text style={styles.subscriptionInfo}>
+                  Buchung automatisch jede Woche wiederholen
+                </Text>
+                
+                {/* Abo aktivieren/deaktivieren */}
+                <View style={styles.switchContainer}>
+                  <View style={styles.switchOption}>
+                    <View style={styles.switchTextContainer}>
+                      <Text style={styles.switchLabel}>
+                        {isRecurring ? '🔄 Serien-Buchung' : '📅 Einzelbuchung'}
+                      </Text>
+                      <Text style={styles.switchDescription}>
+                        {isRecurring 
+                          ? 'Automatische wöchentliche Wiederholung'
+                          : 'Nur einmalige Buchung'
+                        }
+                      </Text>
+                    </View>
+                    <View style={styles.switchWrapper}>
+                      <Switch
+                        value={isRecurring}
+                        onValueChange={setIsRecurring}
+                        trackColor={{ false: '#ccc', true: '#2E8B57' }}
+                        thumbColor={'#fff'}
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Abo-Details nur wenn aktiviert */}
+                {isRecurring && (
+                  <View style={styles.recurringDetails}>
+                    <Text style={styles.recurringTitle}>📋 Abo-Details</Text>
+                    
+                    {/* Anzahl Wochen */}
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Wie viele Wochen?</Text>
+                      <View style={styles.weekOptions}>
+                        {[4, 8, 12, 16].map((weeks) => (
+                          <TouchableOpacity
+                            key={weeks}
+                            style={[
+                              styles.weekOption,
+                              recurringWeeks === weeks && styles.weekOptionSelected
+                            ]}
+                            onPress={() => setRecurringWeeks(weeks)}
+                          >
+                            <Text style={[
+                              styles.weekOptionText,
+                              recurringWeeks === weeks && styles.weekOptionTextSelected
+                            ]}>
+                              {weeks} Wochen
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+
+                    {/* Enddatum anzeigen */}
+                    {recurringWeeks > 0 && (
+                      <View style={styles.endDateInfo}>
+                        <Text style={styles.endDateLabel}>📅 Letzter Termin:</Text>
+                        <Text style={styles.endDateValue}>
+                          {calculateEndDate(selectedDate, recurringWeeks)}
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* Zusammenfassung */}
+                    <View style={styles.recurringSummary}>
+                      <Text style={styles.summaryTitle}>📊 Zusammenfassung</Text>
+                      <Text style={styles.summaryText}>
+                        • {recurringWeeks} Termine insgesamt
+                      </Text>
+                      <Text style={styles.summaryText}>
+                        • Jeden {getWeekdayName(selectedDate)} um {selectedTime}
+                      </Text>
+                      <Text style={styles.summaryText}>
+                        • Platz: {court.name}
+                      </Text>
+                      <Text style={styles.summaryText}>
+                        • Dauer: {duration} Min. pro Termin
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            )}
 
             {/* Notizen */}
             <View style={styles.section}>
@@ -438,6 +568,99 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: '#ccc',
+  },
+  
+  // ✅ SERIEN-BUCHUNG STYLES
+  subscriptionInfo: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  recurringDetails: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#f0f9ff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  recurringTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e40af',
+    marginBottom: 12,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  weekOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  weekOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  weekOptionSelected: {
+    backgroundColor: '#DC143C',
+    borderColor: '#DC143C',
+  },
+  weekOptionText: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  weekOptionTextSelected: {
+    color: '#fff',
+  },
+  endDateInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    padding: 8,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+  },
+  endDateLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginRight: 8,
+  },
+  endDateValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f2937',
+    flex: 1,
+  },
+  recurringSummary: {
+    padding: 12,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  summaryTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 8,
+  },
+  summaryText: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginBottom: 4,
   },
 });
 
