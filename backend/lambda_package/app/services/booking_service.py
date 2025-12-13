@@ -40,19 +40,18 @@ class BookingService:
             
             # Buchung in DB speichern
             buchung = {
-    "id": str(uuid.uuid4()),
-    "platz_id": booking_data["court_id"],  # ← KORRIGIERT: Als STRING, NICHT int()
-    "nutzer_id": booking_data["user_id"],
-    "datum": booking_data["date"],
-    "uhrzeit_von": booking_data["time"],
-    "uhrzeit_bis": end_time,
-    "buchungstyp": booking_data["type"],
-    "notizen": booking_data.get("notes", ""),
-    "status": "aktiv",
-    "preis": price,
-    "erstellt_am": datetime.now().isoformat(),
-
-}
+                "id": str(uuid.uuid4()),
+                "platz_id": booking_data["court_id"],  # KORRIGIERT: Als STRING, NICHT int()
+                "nutzer_id": booking_data["user_id"],
+                "datum": booking_data["date"],
+                "uhrzeit_von": booking_data["time"],
+                "uhrzeit_bis": end_time,
+                "buchungstyp": booking_data["type"],
+                "notizen": booking_data.get("notes", ""),
+                "status": "aktiv",
+                "preis": price,
+                "erstellt_am": datetime.now().isoformat()
+            }
             
             print(f"📤 Speichere Buchung: {buchung}")
             
@@ -63,6 +62,7 @@ class BookingService:
                 print(f"✅ SUCCESS: Buchung erstellt - {created_booking['id']}")
                 
                 return {
+                    "id": created_booking['id'],
                     "success": True,
                     "booking": created_booking,
                     "message": f"Buchung für {booking_data['date']} um {booking_data['time']} Uhr erfolgreich erstellt"

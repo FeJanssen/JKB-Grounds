@@ -323,6 +323,168 @@ const SettingsScreen = ({ changeTab }) => {
     );
   };
 
+  // ✅ DSGVO & DATENSCHUTZ HANDLER
+  const handleDataExport = async () => {
+    try {
+      Alert.alert(
+        'Datenexport',
+        'Möchten Sie alle Ihre gespeicherten Daten als JSON-Datei herunterladen? Dies umfasst Ihr Profil, Buchungen und App-Einstellungen.',
+        [
+          { text: 'Abbrechen', style: 'cancel' },
+          { text: 'Exportieren', onPress: performDataExport }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Fehler', 'Datenexport konnte nicht gestartet werden.');
+    }
+  };
+
+  const performDataExport = async () => {
+    try {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      
+      // Sammle alle Daten
+      const exportData = {
+        profile: userProfile,
+        bookings: userBookings,
+        exportDate: new Date().toISOString(),
+        appVersion: '1.0.0'
+      };
+
+      // Erstelle Download (für Web)
+      if (typeof window !== 'undefined') {
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        
+        const exportFileDefaultName = `jkb-grounds-daten-${new Date().toISOString().split('T')[0]}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+        
+        Alert.alert('Export erfolgreich', 'Ihre Daten wurden heruntergeladen.');
+      }
+    } catch (error) {
+      console.error('Export Error:', error);
+      Alert.alert('Fehler', 'Datenexport fehlgeschlagen.');
+    }
+  };
+
+  const handleDataDeletion = () => {
+    Alert.alert(
+      '⚠️ Konto löschen',
+      'ACHTUNG: Diese Aktion kann nicht rückgängig gemacht werden!\n\nAlle Ihre Daten werden permanent gelöscht:\n• Profil und Kontodaten\n• Buchungshistorie\n• App-Einstellungen\n\nSind Sie sicher?',
+      [
+        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'Endgültig löschen', style: 'destructive', onPress: confirmDataDeletion }
+      ]
+    );
+  };
+
+  const confirmDataDeletion = async () => {
+    try {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      const userId = userProfile.id || await AsyncStorage.getItem('userId');
+      
+      if (!userId) {
+        Alert.alert('Fehler', 'Benutzer-ID nicht gefunden.');
+        return;
+      }
+
+      // API-Aufruf zum Löschen des Kontos
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-ID': userId
+        }
+      });
+
+      if (response.ok) {
+        // Lokale Daten löschen
+        await clearUser();
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        await AsyncStorage.multiRemove(['userId', 'user_id', 'verein_id', 'currentUserId']);
+        
+        Alert.alert(
+          'Konto gelöscht', 
+          'Ihr Konto und alle Daten wurden erfolgreich gelöscht.',
+          [{ text: 'OK', onPress: () => console.log('Account deleted') }]
+        );
+      } else {
+        throw new Error('Server-Fehler beim Löschen');
+      }
+    } catch (error) {
+      console.error('Account deletion error:', error);
+      Alert.alert('Fehler', 'Konto konnte nicht gelöscht werden. Bitte kontaktieren Sie den Support.');
+    }
+  };
+
+  // ✅ RECHTLICHES & INFORMATION HANDLER
+  const handleDataPolicy = () => {
+    Alert.alert(
+      'Datenschutzerklärung',
+      'Unsere Datenschutzerklärung erklärt, wie wir Ihre Daten sammeln, verwenden und schützen.\n\nWir öffnen die Datenschutzerklärung in Ihrem Browser.',
+      [
+        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'Öffnen', onPress: () => openURL('https://jkb-grounds.de/datenschutz') }
+      ]
+    );
+  };
+
+  const handleTermsOfService = () => {
+    Alert.alert(
+      'Allgemeine Geschäftsbedingungen',
+      'Unsere AGBs regeln die Nutzung der JKB Grounds App.\n\nWir öffnen die AGBs in Ihrem Browser.',
+      [
+        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'Öffnen', onPress: () => openURL('https://jkb-grounds.de/agb') }
+      ]
+    );
+  };
+
+  const handleImprint = () => {
+    Alert.alert(
+      'Impressum',
+      'JKB Grounds\n\nVerantwortlich:\nMax Mustermann\nMusterstraße 123\n12345 Musterstadt\n\nE-Mail: info@jkb-grounds.de\nTelefon: +49 123 456789',
+      [{ text: 'Schließen' }]
+    );
+  };
+
+  const handleSupport = () => {
+    Alert.alert(
+      'Support kontaktieren',
+      'Benötigen Sie Hilfe? Kontaktieren Sie uns:',
+      [
+        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'E-Mail senden', onPress: () => openURL('mailto:support@jkb-grounds.de?subject=JKB Grounds App Support') }
+      ]
+    );
+  };
+
+  const handleNotificationSettings = () => {
+    Alert.alert(
+      'Benachrichtigungen',
+      'Benachrichtigungseinstellungen werden in einer zukünftigen Version verfügbar sein.',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleLanguageSettings = () => {
+    Alert.alert(
+      'Sprache',
+      'Spracheinstellungen werden in einer zukünftigen Version verfügbar sein. Aktuell ist nur Deutsch verfügbar.',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const openURL = (url) => {
+    if (typeof window !== 'undefined') {
+      window.open(url, '_blank');
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('de-DE', {
       weekday: 'short',
@@ -364,101 +526,245 @@ const SettingsScreen = ({ changeTab }) => {
           />
         }
       >
-        {/* Buchungen Sektion */}
-        <View style={styles.section}>
+        {/* Buchungen Sektion - VOLLBREITE ZEILEN */}
+        <View style={styles.firstSectionHeader}>
           <Text style={styles.sectionTitle}>📅 Meine Buchungen ({userBookings.length})</Text>
-          
-          {userBookings.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyText}>Keine zukünftigen Buchungen</Text>
+        </View>
+        
+        {userBookings.length === 0 ? (
+          <View style={styles.fullWidthRow}>
+            <View style={styles.rowContent}>
+              <Text style={styles.rowIcon}>📅</Text>
+              <View style={styles.rowTexts}>
+                <Text style={styles.rowTitle}>Keine zukünftigen Buchungen</Text>
+                <Text style={styles.rowSubtitle}>Jetzt einen Platz buchen</Text>
+              </View>
               <TouchableOpacity 
                 style={styles.bookNowButton}
                 onPress={() => changeTab && changeTab('Booking')}
               >
-                <Text style={styles.bookNowText}>Jetzt buchen</Text>
+                <Text style={styles.bookNowText}>Buchen</Text>
               </TouchableOpacity>
             </View>
-          ) : (
-            userBookings.map((booking) => (
-              <View key={booking.id} style={styles.bookingCard}>
-                <View style={styles.bookingInfo}>
-                  <Text style={styles.bookingTitle}>
-                    🎾 {booking.platz?.name || 'Platz ' + booking.platz_id}
+          </View>
+        ) : (
+          userBookings.map((booking) => (
+            <View key={booking.id} style={styles.fullWidthRow}>
+              <View style={styles.rowContent}>
+                <Text style={styles.rowIcon}>🎾</Text>
+                <View style={styles.rowTexts}>
+                  <Text style={styles.rowTitle}>
+                    {booking.platz?.name || 'Platz ' + booking.platz_id}
                   </Text>
-                  <Text style={styles.bookingDate}>
-                    📅 {formatDate(booking.datum)}
-                  </Text>
-                  <Text style={styles.bookingTime}>
-                    🕐 {formatBookingTime(booking)}
+                  <Text style={styles.rowSubtitle}>
+                    📅 {formatDate(booking.datum)} • 🕐 {formatBookingTime(booking)}
                   </Text>
                 </View>
                 <TouchableOpacity 
                   style={styles.cancelButton}
                   onPress={() => cancelBooking(booking)}
                 >
-                  <Text style={styles.cancelButtonText}>Stornieren</Text>
+                  <Text style={styles.cancelButtonText}>×</Text>
                 </TouchableOpacity>
               </View>
-            ))
-          )}
-        </View>
+            </View>
+          ))
+        )}
 
-        {/* Profil Sektion */}
-        <View style={styles.section}>
+        {/* Profil Sektion - VOLLBREITE ZEILEN */}
+        <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>👤 Mein Profil</Text>
-          
-          <View style={styles.profileCard}>
-            <TouchableOpacity 
-              style={styles.profileRow}
-              onPress={() => startEditProfile('name')}
-            >
-              <Text style={styles.profileLabel}>Name</Text>
-              <View style={styles.profileValueContainer}>
-                <Text style={styles.profileValue}>{userProfile.name || 'Nicht angegeben'}</Text>
-                <Text style={styles.editIcon}>✏️</Text>
-              </View>
-            </TouchableOpacity>
+        </View>
+        
+        <TouchableOpacity style={styles.fullWidthRow} onPress={() => startEditProfile('name')}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>👤</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Name</Text>
+              <Text style={styles.rowSubtitle}>{userProfile.name || 'Nicht angegeben'}</Text>
+            </View>
+            <Text style={styles.rowArrow}>✏️</Text>
+          </View>
+        </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.profileRow}
-              onPress={() => startEditProfile('email')}
-            >
-              <Text style={styles.profileLabel}>E-Mail</Text>
-              <View style={styles.profileValueContainer}>
-                <Text style={styles.profileValue}>{userProfile.email || 'Nicht angegeben'}</Text>
-                <Text style={styles.editIcon}>✏️</Text>
-              </View>
-            </TouchableOpacity>
+        <TouchableOpacity style={styles.fullWidthRow} onPress={() => startEditProfile('email')}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>✉️</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>E-Mail</Text>
+              <Text style={styles.rowSubtitle}>{userProfile.email || 'Nicht angegeben'}</Text>
+            </View>
+            <Text style={styles.rowArrow}>✏️</Text>
+          </View>
+        </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.profileRow}
-              onPress={() => startEditProfile('geschlecht')}
-            >
-              <Text style={styles.profileLabel}>Geschlecht</Text>
-              <View style={styles.profileValueContainer}>
-                <Text style={styles.profileValue}>{userProfile.geschlecht || 'Nicht angegeben'}</Text>
-                <Text style={styles.editIcon}>✏️</Text>
-              </View>
-            </TouchableOpacity>
+        <TouchableOpacity style={styles.fullWidthRow} onPress={() => startEditProfile('geschlecht')}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>⚧️</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Geschlecht</Text>
+              <Text style={styles.rowSubtitle}>{userProfile.geschlecht || 'Nicht angegeben'}</Text>
+            </View>
+            <Text style={styles.rowArrow}>✏️</Text>
+          </View>
+        </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.profileRow}
-              onPress={() => startEditProfile('password')}
-            >
-              <Text style={styles.profileLabel}>Passwort</Text>
-              <View style={styles.profileValueContainer}>
-                <Text style={styles.profileValue}>••••••••</Text>
-                <Text style={styles.editIcon}>✏️</Text>
-              </View>
-            </TouchableOpacity>
+        <TouchableOpacity style={styles.fullWidthRow} onPress={() => startEditProfile('password')}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>🔒</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Passwort</Text>
+              <Text style={styles.rowSubtitle}>••••••••</Text>
+            </View>
+            <Text style={styles.rowArrow}>✏️</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* ✅ DSGVO & DATENSCHUTZ SEKTION - VOLLBREITE ZEILEN */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>🔒 Datenschutz & DSGVO</Text>
+        </View>
+        
+        <TouchableOpacity style={styles.fullWidthRow} onPress={handleDataExport}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>📁</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Meine Daten exportieren</Text>
+              <Text style={styles.rowSubtitle}>Alle gespeicherten Daten als JSON herunterladen</Text>
+            </View>
+            <Text style={styles.rowArrow}>→</Text>
+          </View>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.fullWidthRow} onPress={handleDataDeletion}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>🗑️</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Konto & Daten löschen</Text>
+              <Text style={styles.rowSubtitle}>Alle persönlichen Daten unwiderruflich entfernen</Text>
+            </View>
+            <Text style={styles.rowArrow}>→</Text>
+          </View>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.fullWidthRow} onPress={handleDataPolicy}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>�</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Datenschutzerklärung</Text>
+              <Text style={styles.rowSubtitle}>Wie wir Ihre Daten verwenden</Text>
+            </View>
+            <Text style={styles.rowArrow}>→</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* ✅ APP-EINSTELLUNGEN SEKTION - VOLLBREITE ZEILEN */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>⚙️ App-Einstellungen</Text>
+        </View>
+        
+        <TouchableOpacity style={styles.fullWidthRow} onPress={handleNotificationSettings}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>🔔</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Benachrichtigungen</Text>
+              <Text style={styles.rowSubtitle}>Push-Nachrichten verwalten</Text>
+            </View>
+            <Text style={styles.rowArrow}>→</Text>
+          </View>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.fullWidthRow} onPress={handleLanguageSettings}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>🌐</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Sprache</Text>
+              <Text style={styles.rowSubtitle}>Deutsch</Text>
+            </View>
+            <Text style={styles.rowArrow}>→</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* ✅ RECHTLICHES & SUPPORT SEKTION - VOLLBREITE ZEILEN */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>📄 Rechtliches & Support</Text>
+        </View>
+        
+        <TouchableOpacity style={styles.fullWidthRow} onPress={handleTermsOfService}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>📜</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Allgemeine Geschäftsbedingungen</Text>
+              <Text style={styles.rowSubtitle}>Nutzungsbedingungen lesen</Text>
+            </View>
+            <Text style={styles.rowArrow}>→</Text>
+          </View>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.fullWidthRow} onPress={handleImprint}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>🏢</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Impressum</Text>
+              <Text style={styles.rowSubtitle}>Anbieterinformationen</Text>
+            </View>
+            <Text style={styles.rowArrow}>→</Text>
+          </View>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.fullWidthRow} onPress={handleSupport}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>💬</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Support kontaktieren</Text>
+              <Text style={styles.rowSubtitle}>Hilfe und Unterstützung</Text>
+            </View>
+            <Text style={styles.rowArrow}>→</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* ✅ APP-INFO SEKTION - VOLLBREITE ZEILE */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>ℹ️ App-Information</Text>
+        </View>
+        
+        <View style={styles.fullWidthRow}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>📱</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>App-Version</Text>
+              <Text style={styles.rowSubtitle}>1.0.0 (Build 1)</Text>
+            </View>
           </View>
         </View>
 
-        {/* Logout */}
-        <View style={styles.section}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutButtonText}>🚪 Abmelden</Text>
-          </TouchableOpacity>
+        {/* Logout - Vollbreite Zeile mit extra Abstand */}
+        <TouchableOpacity style={styles.logoutRow} onPress={handleLogout}>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowIcon}>🚪</Text>
+            <View style={styles.rowTexts}>
+              <Text style={styles.logoutTitle}>Abmelden</Text>
+              <Text style={styles.logoutSubtitle}>Aus der App ausloggen</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {/* ✅ FOOTER mit rechtlichen Hinweisen */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Durch die Nutzung dieser App stimmen Sie unseren{' '}
+            <Text style={styles.footerLink} onPress={handleTermsOfService}>
+              AGBs
+            </Text>
+            {' '}und der{' '}
+            <Text style={styles.footerLink} onPress={handleDataPolicy}>
+              Datenschutzerklärung
+            </Text>
+            {' '}zu.
+          </Text>
+          <Text style={styles.footerCopyright}>
+            © 2025 JKB Grounds. Alle Rechte vorbehalten.
+          </Text>
         </View>
       </ScrollView>
 
@@ -539,68 +845,82 @@ const SettingsScreen = ({ changeTab }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f1f5f9', // Modernerer Hintergrund für vollbreite Zeilen
   },
-  // ✅ LOADING OVERLAY wie im CRM
+  // ✅ MODERN LOADING OVERLAY - Glasmorphism
   loadingOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(248, 250, 252, 0.95)', // Heller Overlay
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
   },
   loadingText: {
-    color: '#fff',
-    marginTop: 10,
-    fontSize: 16,
+    color: '#1e293b',
+    marginTop: 15,
+    fontSize: 18,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
-  // ✅ FIXED HEADER wie im CRM
+  // ✅ ULTRA-MODERN HEADER - Gradient + Glasmorphism
   header: {
     backgroundColor: '#DC143C',
-    paddingTop: 45,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingTop: 50, // Mehr Padding für moderne Optik
+    paddingBottom: 25,
+    paddingHorizontal: 25,
     alignItems: 'center',
+    shadowColor: 'rgba(220, 20, 60, 0.4)',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 15,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 28, // Größer und imposanter
+    fontWeight: '800', // Extra bold
     color: '#fff',
+    letterSpacing: 1.2,
+    textAlign: 'center',
   },
-  // ✅ SCROLLABLE CONTENT mit fester Height wie im CRM
+  // ✅ VOLLBREITE CONTENT AREA - KEIN PADDING
   content: {
     flex: 1,
-    padding: 20,
-    paddingBottom: 100,     // ✅ Platz für Bottom Tab Bar
-    height: '70vh',         // ✅ Feste Höhe für Web
-    overflow: 'auto',       // ✅ Eigenes Scrolling
-    maxHeight: '90vh',      // ✅ Max-Height Begrenzung
+    padding: 0, // KOMPLETT WEG - volle Breite
+    paddingBottom: 120,
+    height: '70vh',
+    overflow: 'auto',
+    maxHeight: '90vh',
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 0, // KEIN Abstand - volle Breite
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
+    fontSize: 22, // Größer
+    fontWeight: '700', // Dicker
+    color: '#1e293b', // Modernes Dunkelgrau
+    marginBottom: 16,
+    letterSpacing: 0.3,
+    textTransform: 'none', // Normale Kapitalisierung
+    paddingHorizontal: 20, // Nur Text hat Padding, nicht Container
   },
   bookingCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 10,
+    backgroundColor: '#ffffff',
+    padding: 20, // Mehr Padding
+    borderRadius: 16, // Rundere Ecken
+    marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowColor: 'rgba(30, 41, 59, 0.08)', // Subtilerer Schatten
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.1)', // Hauchzarter Border
   },
   bookingInfo: {
     flex: 1,
@@ -622,14 +942,17 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: '#ff4444',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelButtonText: {
     color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   emptyCard: {
     backgroundColor: '#fff',
@@ -649,9 +972,9 @@ const styles = StyleSheet.create({
   },
   bookNowButton: {
     backgroundColor: '#DC143C',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
   bookNowText: {
     color: '#fff',
@@ -693,16 +1016,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   logoutButton: {
-    backgroundColor: '#ff4444',
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: '#ef4444', // Moderneres Rot
+    padding: 18, // Mehr Padding
+    borderRadius: 16, // Rundere Ecken
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 24,
+    shadowColor: 'rgba(239, 68, 68, 0.25)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 6,
+    minHeight: 56, // Konsistente Höhe
   },
   logoutButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 17, // Größer
+    fontWeight: '700', // Dicker
+    letterSpacing: 0.5,
   },
   modalOverlay: {
     flex: 1,
@@ -787,6 +1117,163 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: '#ccc',
+  },
+  // ✅ ULTRA-MODERNE EINSTELLUNGEN STYLES
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20, // Noch rundere Ecken - sehr modern
+    shadowColor: 'rgba(30, 41, 59, 0.08)',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 15,
+    elevation: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.08)',
+    overflow: 'hidden', // Für perfekte Rundungen
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20, // Mehr Padding für moderne Optik
+    minHeight: 72, // Konsistente Höhe
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  settingIcon: {
+    fontSize: 24, // Größere Icons
+    marginRight: 16,
+    width: 32, // Feste Breite für Alignment
+    textAlign: 'center',
+  },
+  settingTexts: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  settingTitle: {
+    fontSize: 17, // Größer
+    fontWeight: '600',
+    color: '#1e293b', // Modernes Dunkelgrau
+    marginBottom: 4,
+    letterSpacing: 0.2,
+  },
+  settingSubtitle: {
+    fontSize: 15, // Größer
+    color: '#64748b', // Moderneres Grau
+    lineHeight: 20,
+    letterSpacing: 0.1,
+  },
+  settingArrow: {
+    fontSize: 18, // Größer
+    color: '#94a3b8', // Softer
+    fontWeight: '600',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(148, 163, 184, 0.15)', // Subtiler
+    marginLeft: 56, // Angepasst an größere Icons
+  },
+  footer: {
+    marginTop: 40,
+    marginBottom: 50,
+    paddingHorizontal: 25,
+    paddingVertical: 20,
+    backgroundColor: 'rgba(248, 250, 252, 0.8)',
+    borderRadius: 16,
+    marginHorizontal: 8,
+  },
+  footerText: {
+    fontSize: 13, // Etwas größer
+    color: '#64748b', // Moderneres Grau
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 12,
+    letterSpacing: 0.1,
+  },
+  footerLink: {
+    color: '#DC143C',
+    fontWeight: '600', // Dicker
+  },
+  footerCopyright: {
+    fontSize: 12, // Größer
+    color: '#94a3b8', // Softer
+    textAlign: 'center',
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
+  
+  // ✅ VOLLBREITE ZEILEN STYLES
+  firstSectionHeader: {
+    paddingHorizontal: 0, // KOMPLETT VOLLBREIT
+    paddingVertical: 12,
+    backgroundColor: 'rgba(248, 250, 252, 0.9)',
+    marginTop: 0, // Erster Bereich ohne oberen Abstand
+  },
+  sectionHeader: {
+    paddingHorizontal: 0, // KOMPLETT VOLLBREIT
+    paddingVertical: 12,
+    backgroundColor: 'rgba(248, 250, 252, 0.9)',
+    marginTop: 24, // Abstand zwischen Bereichen
+  },
+  fullWidthRow: {
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(148, 163, 184, 0.1)',
+    marginHorizontal: 0, // Volle Breite
+  },
+  rowContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20, // Nur Inhalts-Padding, Container ist vollbreit
+    paddingVertical: 16,
+  },
+  rowIcon: {
+    fontSize: 22,
+    marginRight: 16,
+    width: 30,
+    textAlign: 'center',
+  },
+  rowTexts: {
+    flex: 1,
+  },
+  rowTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 2,
+  },
+  rowSubtitle: {
+    fontSize: 13,
+    color: '#64748b',
+    lineHeight: 18,
+  },
+  rowArrow: {
+    fontSize: 18,
+    color: '#94a3b8',
+    marginLeft: 8,
+  },
+  
+  // ✅ LOGOUT ROW STYLES
+  logoutRow: {
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(239, 68, 68, 0.1)',
+    marginTop: 32, // Größerer Abstand vor dem Logout-Button
+  },
+  logoutTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ef4444',
+    marginBottom: 2,
+  },
+  logoutSubtitle: {
+    fontSize: 13,
+    color: '#94a3b8',
+    lineHeight: 18,
   },
 });
 

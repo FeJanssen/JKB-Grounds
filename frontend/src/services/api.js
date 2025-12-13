@@ -1,3 +1,6 @@
+// ✅ IMPORT der zentralen Konstanten
+import { buildApiUrl, API_ENDPOINTS, APP_CONFIG } from '../config/constants';
+
 // 🚀 PRODUCTION URL (AWS Lambda) - Für AWS Deployment:
 const BASE_URL = 'https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws';
 
@@ -85,9 +88,9 @@ async getCurrentUserId() {
   async login(credentials) {
     try {
       console.log('Login Request:', credentials);
-      console.log('Login URL:', `${API_BASE_URL}/auth/login`);
+      console.log('Login URL:', buildApiUrl(API_ENDPOINTS.AUTH.LOGIN));
       
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(buildApiUrl(API_ENDPOINTS.AUTH.LOGIN), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

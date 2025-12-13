@@ -45,14 +45,15 @@ export const APP_CONFIG = {
 // API Endpoints - dynamisch basierend auf BASE_URL
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: '/api/auth/login',
-    REGISTER: '/api/auth/register',
-    USER: (userId) => `/api/auth/user/${userId}`,
+    LOGIN: '/api/auth/login',  // ✅ KORRIGIERT: Korrekte Route verwenden
+    REGISTER: '/api/auth/register',  // ✅ KORRIGIERT: Korrekte Route verwenden  
+    USER: (userId) => `/api/auth/user/${userId}`,  // ✅ KORRIGIERT: Korrekte Route verwenden
     ROLE: (userId) => `/api/users/${userId}/role`,
   },
   
   BOOKINGS: {
     CREATE: '/api/bookings/create',
+    SERIES: '/api/bookings/series',  // ✅ NEU: Serien-Buchungs-Endpoint
     BY_DATE: (date, vereinId) => `/api/bookings/date/${date}?verein_id=${vereinId}`,
     DELETE: (bookingId) => `/api/bookings/${bookingId}`,
   },

@@ -1,9 +1,25 @@
 from fastapi import APIRouter, HTTPException
 from app.database.connection import supabase
 
-router = APIRouter(prefix="", tags=["roles"])
+router = APIRouter(prefix="/api/roles", tags=["roles"])
 
-@router.get("")
+@router.get("/")
+async def get_roles():
+    """Alle Rollen laden - für ConfiguratorScreen"""
+    try:
+        print("👥 Lade alle Rollen aus der Datenbank...")
+        
+        response = supabase.table("rolle").select("*").execute()
+        
+        print(f"📊 Gefundene Rollen: {len(response.data) if response.data else 0}")
+        
+        return response.data or []
+        
+    except Exception as e:
+        print(f"❌ Fehler beim Laden der Rollen: {e}")
+        raise HTTPException(status_code=500, detail="Fehler beim Laden der Rollen")
+
+@router.get("/list")
 async def get_all_roles():
     """Alle Rollen laden"""
     try:

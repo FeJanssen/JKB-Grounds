@@ -14,8 +14,14 @@ import { PermissionContext } from '../context/PermissionContext';
 import BookingModal from './BookingModal';
 import { buildApiUrl, API_ENDPOINTS, APP_CONFIG } from '../config/constants';
 
-const BookingCalendar = ({ courts = [], canBookPublic = false, vereinId = null, userId = null }) => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+const BookingCalendar = ({ 
+  courts = [], 
+  canBookPublic = false, 
+  vereinId = null, 
+  userId = null,
+  selectedDate = new Date() // ✅ selectedDate als Prop empfangen
+}) => {
+  // selectedDate wird jetzt von außen gesteuert
   const [viewMode, setViewMode] = useState('day');
   const [timeSlots, setTimeSlots] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -244,6 +250,19 @@ const BookingCalendar = ({ courts = [], canBookPublic = false, vereinId = null, 
     setSelectedDate(new Date());
   };
 
+  // ✨ NEUE WOCHENSPRUNG-FUNKTIONEN
+  const goToPreviousWeek = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() - 7);
+    setSelectedDate(newDate);
+  };
+
+  const goToNextWeek = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + 7);
+    setSelectedDate(newDate);
+  };
+
   const handleTimeSlotPress = (court, timeSlot) => {
     if (!isTimeSlotBookable(court, timeSlot)) {
       Alert.alert(
@@ -282,13 +301,35 @@ const BookingCalendar = ({ courts = [], canBookPublic = false, vereinId = null, 
         throw new Error('Keine gültige Benutzer-ID gefunden. Bitte neu einloggen.');
       }
       
-      const response = await fetch(buildApiUrl(API_ENDPOINTS.BOOKINGS.CREATE), {
+      // ✅ SERIEN-BUCHUNG vs EINZEL-BUCHUNG: Wähle richtige API Route
+      const isSeriesBooking = bookingData.is_recurring === true;
+      const endpoint = isSeriesBooking ? API_ENDPOINTS.BOOKINGS.SERIES : API_ENDPOINTS.BOOKINGS.CREATE;
+      
+      console.log(`📍 ${isSeriesBooking ? 'SERIEN-BUCHUNG' : 'EINZEL-BUCHUNG'} detected - using endpoint: ${endpoint}`);
+      
+      // ✅ Bei Serien-Buchung: Datenstruktur anpassen
+      let requestData = bookingData;
+      if (isSeriesBooking) {
+        requestData = {
+          platz_id: bookingData.platz_id,
+          start_date: bookingData.date,  // ✅ date -> start_date für Series API
+          time: bookingData.time,
+          duration: bookingData.duration,
+          type: bookingData.type,
+          notes: bookingData.notes,
+          weeks: bookingData.recurring_weeks,
+          series_name: bookingData.series_name
+        };
+        console.log('🎯 SERIEN-BUCHUNG: Angepasste Datenstruktur:', JSON.stringify(requestData, null, 2));
+      }
+      
+      const response = await fetch(buildApiUrl(endpoint), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-User-ID': userId  // ✅ Dynamische User-ID verwenden
         },
-        body: JSON.stringify(bookingData)
+        body: JSON.stringify(requestData)
       });
       
       const data = await response.json();
@@ -300,18 +341,37 @@ const BookingCalendar = ({ courts = [], canBookPublic = false, vereinId = null, 
         console.log('✅ Buchung erfolgreich, lade Buchungen neu...');
         await loadBookingsForDate(selectedDate);
         
-        Alert.alert(
-          'Buchung erfolgreich!',
-          `Platz wurde für ${bookingData.date} um ${bookingData.time} gebucht.`,
-          [{ 
-            text: 'OK', 
-            onPress: () => {
-              // Nochmal laden zur Sicherheit
-              console.log('✅ Dialog OK gedrückt, lade nochmal...');
-              loadBookingsForDate(selectedDate);
-            }
-          }]
-        );
+        // ✅ UNTERSCHIEDLICHE SUCCESS-NACHRICHTEN
+        if (isSeriesBooking && data.summary) {
+          Alert.alert(
+            'Serien-Buchung erfolgreich!',
+            `${data.summary.successful} von ${data.summary.total} Buchungen erstellt.\n\n` +
+            `Serie: ${data.series_info.name}\n` +
+            `Zeitraum: ${data.series_info.weeks} Wochen\n` +
+            `Start: ${data.series_info.start_date}` +
+            (data.summary.failed > 0 ? `\n\n⚠️ ${data.summary.failed} Termine konnten nicht gebucht werden (bereits belegt).` : ''),
+            [{ 
+              text: 'OK', 
+              onPress: () => {
+                console.log('✅ Serien-Buchung Dialog OK gedrückt, lade Buchungen neu...');
+                loadBookingsForDate(selectedDate);
+              }
+            }]
+          );
+        } else {
+          Alert.alert(
+            'Buchung erfolgreich!',
+            `Platz wurde für ${bookingData.date} um ${bookingData.time} gebucht.`,
+            [{ 
+              text: 'OK', 
+              onPress: () => {
+                // Nochmal laden zur Sicherheit
+                console.log('✅ Dialog OK gedrückt, lade nochmal...');
+                loadBookingsForDate(selectedDate);
+              }
+            }]
+          );
+        }
       } else {
         // ✅ BESSERE FEHLERBEHANDLUNG für 422
         let errorMessage = 'Buchung fehlgeschlagen';
@@ -348,64 +408,8 @@ const BookingCalendar = ({ courts = [], canBookPublic = false, vereinId = null, 
 
   return (
     <View style={styles.container} key={renderKey}>
-      {/* Permission Header */}
-      <View style={styles.permissionHeader}>
-        <Text style={styles.permissionTitle}>Ihre Buchungsberechtigungen:</Text>
-        <View style={styles.permissionRow}>
-          <Text style={styles.permissionItem}>
-            Private Buchung: <Text style={styles.permissionEnabled}>Verfügbar</Text>
-          </Text>
-          <Text style={styles.permissionItem}>
-            Öffentliche Buchung: {canBookPublic ? (
-              <Text style={styles.permissionEnabled}>Verfügbar</Text>
-            ) : (
-              <Text style={styles.permissionDisabled}>Nicht verfügbar</Text>
-            )}
-          </Text>
-        </View>
-      </View>
-
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Buchungskalender</Text>
-        <View style={styles.dateNavigation}>
-          <TouchableOpacity style={styles.navButton} onPress={goToPreviousDay}>
-            <Text style={styles.navButtonText}>←</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.dateContainer} onPress={goToToday}>
-            <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navButton} onPress={goToNextDay}>
-            <Text style={styles.navButtonText}>→</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Court Navigation */}
-      {courts.length > COURTS_PER_VIEW && (
-        <View style={styles.courtNavigation}>
-          <TouchableOpacity 
-            style={[styles.courtNavButton, !canShowPreviousCourts && styles.courtNavButtonDisabled]}
-            onPress={goToPreviousCourts}
-            disabled={!canShowPreviousCourts}
-          >
-            <Text style={styles.courtNavButtonText}>←</Text>
-          </TouchableOpacity>
-          
-          <Text style={styles.courtNavInfo}>
-            Plätze {courtStartIndex + 1}-{Math.min(courtStartIndex + COURTS_PER_VIEW, courts.length)} von {courts.length}
-          </Text>
-          
-          <TouchableOpacity 
-            style={[styles.courtNavButton, !canShowNextCourts && styles.courtNavButtonDisabled]}
-            onPress={goToNextCourts}
-            disabled={!canShowNextCourts}
-          >
-            <Text style={styles.courtNavButtonText}>→</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
+      {/* ✅ Navigation wurde ins BookingScreen verschoben */}
+      
       {/* Calendar Grid */}
       <View style={styles.calendarContainer}>
         {/* Header Row with Court Names */}
@@ -574,26 +578,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   navButton: {
-    padding: 12,
+    padding: 10, // Reduziert von 12
     backgroundColor: '#f0f0f0',
     borderRadius: 8,
-    marginHorizontal: 8,
+    marginHorizontal: 3, // Reduziert von 8 auf 3
   },
   navButtonText: {
-    fontSize: 18,
+    fontSize: 16, // Reduziert von 18
     fontWeight: 'bold',
     color: '#333',
+  },
+  // ✨ NEUE WOCHENSPRUNG-BUTTON STYLES
+  weekNavButton: {
+    padding: 10, // Reduziert von 12
+    backgroundColor: '#DC143C', // Rote Farbe für Wochensprünge
+    borderRadius: 8,
+    marginHorizontal: 2, // Reduziert von 4 auf 2
+    minWidth: 45, // Reduziert von 50
+  },
+  weekNavButtonText: {
+    fontSize: 14, // Reduziert von 16
+    fontWeight: 'bold',
+    color: '#fff', // Weißer Text auf rotem Hintergrund
+    textAlign: 'center',
   },
   dateContainer: {
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12, // Reduziert von 16
   },
   dateText: {
-    fontSize: 18,
+    fontSize: 16, // Reduziert von 18
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
-    minWidth: 200,
+    minWidth: 160, // Reduziert von 200
   },
   content: {
     // Entfernt - wird jetzt vom parent ScrollView verwaltet
