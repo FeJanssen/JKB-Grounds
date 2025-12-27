@@ -13,7 +13,9 @@ import {
   Platform,
   RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../config/baseUrl';
+import ScrollableContainer from '../components/ScrollableContainer';
 
 const ConfiguratorScreen = () => {
   const [activeTab, setActiveTab] = useState('courts');
@@ -46,13 +48,13 @@ const ConfiguratorScreen = () => {
       key: 'darf_buchen', 
       label: 'Darf buchen', 
       beschreibung: 'Kann Plätze buchen', 
-      icon: '🎾' 
+      icon: 'tennisball' 
     },
     { 
       key: 'darf_oeffentlich_buchen', 
       label: 'Darf öffentlich buchen', 
       beschreibung: 'Kann öffentliche Buchungen machen', 
-      icon: '🌍' 
+      icon: 'globe-outline' 
     },
   ];
 
@@ -280,12 +282,16 @@ const ConfiguratorScreen = () => {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>⚙️ Konfigurator</Text>
+          <Text style={styles.headerTitle}>Konfigurator</Text>
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>❌ {error}</Text>
+          <View style={styles.errorRow}>
+            <Ionicons name="close-circle" size={20} color="#ef4444" style={styles.errorIcon} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
           <TouchableOpacity style={styles.retryButton} onPress={loadData}>
-            <Text style={styles.retryButtonText}>🔄 Erneut versuchen</Text>
+            <Ionicons name="refresh" size={16} color="#fff" style={styles.retryIcon} />
+            <Text style={styles.retryButtonText}>Erneut versuchen</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -522,9 +528,9 @@ const ConfiguratorScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* ✅ FIXED HEADER wie im CRM */}
+      {/* Simple Clean Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>⚙️ Konfigurator</Text>
+        <Text style={styles.headerTitle}>Konfigurator</Text>
       </View>
 
       {/* ✅ TAB SELECTOR außerhalb des ScrollView */}
@@ -533,21 +539,33 @@ const ConfiguratorScreen = () => {
           style={[styles.tabButton, activeTab === 'courts' && styles.activeTabButton]}
           onPress={() => setActiveTab('courts')}
         >
+          <Ionicons 
+            name="tennisball" 
+            size={18} 
+            color={activeTab === 'courts' ? '#DC143C' : '#666'} 
+            style={styles.tabIcon} 
+          />
           <Text style={[styles.tabButtonText, activeTab === 'courts' && styles.activeTabButtonText]}>
-            🎾 Plätze
+            Plätze
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'permissions' && styles.activeTabButton]}
           onPress={() => setActiveTab('permissions')}
         >
+          <Ionicons 
+            name="shield-checkmark-outline" 
+            size={18} 
+            color={activeTab === 'permissions' ? '#DC143C' : '#666'} 
+            style={styles.tabIcon} 
+          />
           <Text style={[styles.tabButtonText, activeTab === 'permissions' && styles.activeTabButtonText]}>
-            🔐 Berechtigungen
+            Berechtigungen
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* ✅ WEB-KOMPATIBLES SCROLLING - Einfache ScrollView wie SettingsScreen */}
+      {/* ✅ WEB-KOMPATIBLES SCROLLING - EXAKT wie CRM Screen */}
       <ScrollView 
         style={styles.scrollableContent}
         showsVerticalScrollIndicator={false}
@@ -571,17 +589,24 @@ const ConfiguratorScreen = () => {
                 <View key={court.id} style={styles.courtCard}>
                   <View style={styles.courtInfo}>
                     <Text style={styles.courtName}>{court.name}</Text>
-                    <Text style={styles.courtDetails}>🎾 {court.platztyp}</Text>
-                    <Text style={styles.courtTimes}>
-                      🕐 Buchbar: {court.buchbar_von || '07:00'} - {court.buchbar_bis || '22:00'}
-                    </Text>
+                    <View style={styles.courtDetailRow}>
+                      <Ionicons name="tennisball" size={16} color="#DC143C" style={styles.courtDetailIcon} />
+                      <Text style={styles.courtDetails}>{court.platztyp}</Text>
+                    </View>
+                    <View style={styles.courtDetailRow}>
+                      <Ionicons name="time-outline" size={16} color="#DC143C" style={styles.courtDetailIcon} />
+                      <Text style={styles.courtTimes}>
+                        Buchbar: {court.buchbar_von || '07:00'} - {court.buchbar_bis || '22:00'}
+                      </Text>
+                    </View>
                   </View>
                   <View style={styles.courtActions}>
                     <TouchableOpacity 
                       style={styles.editButton}
                       onPress={() => openCourtModal(court)}
                     >
-                      <Text style={styles.editButtonText}>✏️ Bearbeiten</Text>
+                      <Ionicons name="create-outline" size={16} color="#fff" style={styles.buttonIcon} />
+                      <Text style={styles.editButtonText}>Bearbeiten</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
                       style={styles.deleteButton}
@@ -590,7 +615,8 @@ const ConfiguratorScreen = () => {
                         deleteCourt(court.id);
                       }}
                     >
-                      <Text style={styles.deleteButtonText}>🗑️ Löschen</Text>
+                      <Ionicons name="trash-outline" size={16} color="#fff" style={styles.buttonIcon} />
+                      <Text style={styles.deleteButtonText}>Löschen</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -613,14 +639,18 @@ const ConfiguratorScreen = () => {
             {Array.isArray(roles) && roles.length > 0 ? (
               roles.map((role) => (
                 <View key={role.id} style={styles.roleCard}>
-                  <Text style={styles.roleName}>👤 {role.name}</Text>
+                  <View style={styles.roleHeader}>
+                    <Ionicons name="person" size={20} color="#DC143C" style={styles.roleIcon} />
+                    <Text style={styles.roleName}>{role.name}</Text>
+                  </View>
                   
                   {VERFUEGBARE_RECHTE.map((recht) => (
                     <View key={recht.key} style={styles.permissionRow}>
                       <View style={styles.permissionInfo}>
-                        <Text style={styles.permissionName}>
-                          {recht.icon} {recht.label}
-                        </Text>
+                        <View style={styles.permissionNameRow}>
+                          <Ionicons name={recht.icon} size={18} color="#DC143C" style={styles.permissionIcon} />
+                          <Text style={styles.permissionName}>{recht.label}</Text>
+                        </View>
                         <Text style={styles.permissionDescription}>
                           {recht.beschreibung}
                         </Text>
@@ -785,18 +815,20 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
   },
-  // ✅ FIXED HEADER wie im CRM
+  // Simple Clean Header
   header: {
-    backgroundColor: '#DC143C',
-    paddingTop: 45,
-    paddingBottom: 15,
+    backgroundColor: '#fff',
+    paddingTop: 20, // Safe area padding
+    paddingBottom: 20,
     paddingHorizontal: 20,
-    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1e293b',
+    textAlign: 'center',
   },
   // ✅ TAB SELECTOR zwischen Header und Content
   tabSelector: {
@@ -814,9 +846,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     marginHorizontal: 5,
     borderRadius: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  tabIcon: {
+    marginRight: 6,
   },
   activeTabButton: {
-    backgroundColor: '#DC143C',
+    backgroundColor: '#f8f9fa',
+    borderWidth: 2,
+    borderColor: '#DC143C',
   },
   tabButtonText: {
     fontSize: 16,
@@ -824,16 +863,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   activeTabButtonText: {
-    color: '#fff',
+    color: '#DC143C',
   },
-  // ✅ WEB-KOMPATIBLES SCROLLING - EXAKT wie SettingsScreen
+  // ✅ WEB-KOMPATIBLES SCROLLING - EXAKT wie CRM Screen
   scrollableContent: {
     flex: 1,
     padding: 20,
-    paddingBottom: 100,     // ✅ Platz für Bottom Tab Bar
-    height: '70vh',         // ✅ Feste Höhe für Web
-    overflow: 'auto',       // ✅ Eigenes Scrolling
-    maxHeight: '90vh',      // ✅ Max-Height Begrenzung
+    paddingBottom: 200,     // ✅ Platz für Bottom Tab Bar (wie CRM)
+    height: '70vh',         // ✅ Feste Höhe für Web (wie CRM)
+    overflow: 'auto',       // ✅ Eigenes Scrolling (wie CRM)
+    maxHeight: '90vh',      // ✅ Max-Height Begrenzung (wie CRM)
   },
   errorContainer: {
     flex: 1,
@@ -841,17 +880,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  errorIcon: {
+    marginRight: 8,
+  },
   errorText: {
     fontSize: 18,
     color: '#FF3B30',
     textAlign: 'center',
-    marginBottom: 20,
   },
   retryButton: {
     backgroundColor: '#DC143C',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryIcon: {
+    marginRight: 8,
   },
   retryButtonText: {
     color: '#fff',
@@ -923,10 +975,17 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 4,
   },
+  courtDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  courtDetailIcon: {
+    marginRight: 6,
+  },
   courtDetails: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 2,
   },
   courtTimes: {
     fontSize: 12,
@@ -941,6 +1000,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonIcon: {
+    marginRight: 6,
   },
   editButtonText: {
     color: '#fff',
@@ -952,6 +1017,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   deleteButtonText: {
     color: '#fff',
@@ -969,11 +1037,18 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  roleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  roleIcon: {
+    marginRight: 8,
+  },
   roleName: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 12,
   },
   permissionRow: {
     flexDirection: 'row',
@@ -986,6 +1061,13 @@ const styles = StyleSheet.create({
   permissionInfo: {
     flex: 1,
     marginRight: 12,
+  },
+  permissionNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  permissionIcon: {
+    marginRight: 8,
   },
   permissionName: {
     fontSize: 16,

@@ -30,6 +30,10 @@ const BookingCalendar = ({
   const [courtStartIndex, setCourtStartIndex] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [renderKey, setRenderKey] = useState(0); // ✅ Force Re-Render
+  
+  // ✅ NEUES STATE FÜR NOTIZEN-POPUP
+  const [notesModalVisible, setNotesModalVisible] = useState(false);
+  const [selectedBookingNotes, setSelectedBookingNotes] = useState(null);
 
   // ✅ SICHERE BUCHUNGEN-SETZUNG
   const setSafeBookings = (data) => {
@@ -264,7 +268,10 @@ const BookingCalendar = ({
   };
 
   const handleTimeSlotPress = (court, timeSlot) => {
+    console.log('🔥 handleTimeSlotPress aufgerufen!', { court: court.name, timeSlot });
+    
     if (!isTimeSlotBookable(court, timeSlot)) {
+      console.log('❌ Zeitslot nicht buchbar');
       Alert.alert(
         'Nicht buchbar',
         'Dieser Zeitslot ist außerhalb der buchbaren Zeiten für diesen Platz.',
@@ -273,16 +280,47 @@ const BookingCalendar = ({
       return;
     }
 
-    if (isTimeSlotBooked(court.id, timeSlot)) {
+    const isBooked = isTimeSlotBooked(court.id, timeSlot);
+    console.log('🎯 Buchungsstatus:', isBooked);
+
+    if (isBooked) {
       const bookingInfo = getBookingInfo(court.id, timeSlot);
-      Alert.alert(
-        'Bereits gebucht',
-        `Dieser Platz ist von ${bookingInfo.uhrzeit_von} bis ${bookingInfo.uhrzeit_bis} gebucht.`,
-        [{ text: 'OK' }]
-      );
+      console.log('📋 Buchungsinfo gefunden:', bookingInfo);
+      
+      // ✅ NOTIZEN-POPUP: Zeige Notizen wenn vorhanden
+      const notesText = bookingInfo.notes || bookingInfo.notizen || '';
+      console.log('📝 Notizen-Check:', { 
+        notes: bookingInfo.notes, 
+        notizen: bookingInfo.notizen, 
+        final: notesText 
+      });
+      
+      if (bookingInfo && notesText && notesText.trim()) {
+        console.log('📝 Zeige Notizen-Modal:', notesText);
+        setSelectedBookingNotes({
+          court: court.name,
+          time: `${bookingInfo.uhrzeit_von} - ${bookingInfo.uhrzeit_bis}`,
+          date: formatDate(selectedDate),
+          notes: notesText.trim(),
+          hasNotes: true
+        });
+        setNotesModalVisible(true);
+      } else {
+        console.log('⚠️ Keine Notizen gefunden oder leer');
+        // ✅ WEB-KOMPATIBEL: Nutze Modal statt Alert
+        setSelectedBookingNotes({
+          court: court.name,
+          time: `${bookingInfo?.uhrzeit_von || '?'} - ${bookingInfo?.uhrzeit_bis || '?'}`,
+          date: formatDate(selectedDate),
+          notes: 'Keine Notizen hinterlegt',
+          hasNotes: false
+        });
+        setNotesModalVisible(true);
+      }
       return;
     }
 
+    console.log('✅ Zeitslot frei - öffne Buchungsmodal');
     setSelectedBooking({
       court: court,
       date: formatDateForAPI(selectedDate),
@@ -468,8 +506,11 @@ const BookingCalendar = ({
                     isBooked && styles.bookedCell,
                     !isBookable && styles.notBookableCell
                   ]}
-                  onPress={() => handleTimeSlotPress(court, timeSlot)}
-                  disabled={isBooked || !isBookable}
+                  onPress={() => {
+                    console.log('🔥 TouchableOpacity pressed!', { court: court.name, timeSlot, isBooked, isBookable });
+                    handleTimeSlotPress(court, timeSlot);
+                  }}
+                  disabled={!isBookable && !isBooked} // ✅ NUR nicht-buchbare Slots deaktivieren, gebuchte Slots sollen klickbar bleiben
                 >
                   <Text 
                     style={[
@@ -522,6 +563,54 @@ const BookingCalendar = ({
         vereinId={vereinId}
         userId={userId}  // ✅ User-ID an Modal weiterleiten
       />
+
+      {/* ✅ NOTIZEN-MODAL */}
+      <Modal
+        visible={notesModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setNotesModalVisible(false)}
+      >
+        <View style={styles.notesModalOverlay}>
+          <View style={styles.notesModalContent}>
+            <View style={styles.notesModalHeader}>
+              <Text style={styles.notesModalIcon}>📝</Text>
+              <Text style={styles.notesModalTitle}>Buchungsnotizen</Text>
+            </View>
+            
+            {selectedBookingNotes && (
+              <View style={styles.notesBookingInfo}>
+                <Text style={styles.notesBookingText}>
+                  <Text style={styles.notesBold}>Platz:</Text> {selectedBookingNotes.court}
+                </Text>
+                <Text style={styles.notesBookingText}>
+                  <Text style={styles.notesBold}>Zeit:</Text> {selectedBookingNotes.time}
+                </Text>
+                <Text style={styles.notesBookingText}>
+                  <Text style={styles.notesBold}>Datum:</Text> {selectedBookingNotes.date}
+                </Text>
+              </View>
+            )}
+            
+            <View style={styles.notesContentArea}>
+              <Text style={styles.notesContentLabel}>Notizen:</Text>
+              <Text style={[
+                styles.notesContentText,
+                !selectedBookingNotes?.hasNotes && styles.notesContentEmpty
+              ]}>
+                {selectedBookingNotes?.notes || 'Keine Notizen verfügbar'}
+              </Text>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.notesModalButton}
+              onPress={() => setNotesModalVisible(false)}
+            >
+              <Text style={styles.notesModalButtonText}>Schließen</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -786,6 +875,99 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  // ✅ NOTIZEN-MODAL STYLES
+  notesModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notesModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 25,
+    width: '90%',
+    maxWidth: 500,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  notesModalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  notesModalIcon: {
+    fontSize: 40,
+    marginBottom: 10,
+  },
+  notesModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#DC143C',
+    textAlign: 'center',
+  },
+  notesBookingInfo: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 20,
+    width: '100%',
+  },
+  notesBookingText: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 5,
+  },
+  notesBold: {
+    fontWeight: 'bold',
+    color: '#DC143C',
+  },
+  notesContentArea: {
+    width: '100%',
+    marginBottom: 25,
+  },
+  notesContentLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
+  notesContentText: {
+    fontSize: 16,
+    color: '#666',
+    lineHeight: 24,
+    backgroundColor: '#f8f9fa',
+    padding: 15,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#DC143C',
+    minHeight: 80,
+  },
+  notesContentEmpty: {
+    color: '#999',
+    fontStyle: 'italic',
+    backgroundColor: '#f5f5f5',
+    borderLeftColor: '#999',
+  },
+  notesModalButton: {
+    backgroundColor: '#DC143C',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 25,
+    minWidth: 120,
+  },
+  notesModalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

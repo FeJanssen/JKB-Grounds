@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, ScrollView, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HomeScreen from '../screens/HomeScreen';
 import BookingScreen from '../screens/BookingScreen';
@@ -132,19 +133,19 @@ const SimpleTabNavigator = () => {
     if (finalAdminStatus) {
       console.log('✅ ADMIN TABS - 5 Stück');
       return [
-        { key: 'Home', icon: '🏠', label: 'Home' },
-        { key: 'Booking', icon: '🎾', label: 'Platzbuchung' },
-        { key: 'Settings', icon: '⚙️', label: 'Einstellungen' },
-        { key: 'Config', icon: '🔧', label: 'Konfigurator' },
-        { key: 'CRM', icon: '👥', label: 'CRM' },
+        { key: 'Home', icon: 'home', label: 'Home' },
+        { key: 'Booking', icon: 'calendar', label: 'Booking' },
+        { key: 'Settings', icon: 'settings', label: 'Settings' },
+        { key: 'Config', icon: 'construct', label: 'Config' },
+        { key: 'CRM', icon: 'people', label: 'CRM' },
       ];
     }
     
     console.log('👤 USER TABS - 3 Stück');
     return [
-      { key: 'Home', icon: '🏠', label: 'Home' },
-      { key: 'Booking', icon: '🎾', label: 'Platzbuchung' },
-      { key: 'CRM', icon: '👥', label: 'CRM' },
+      { key: 'Home', icon: 'home', label: 'Home' },
+      { key: 'Booking', icon: 'calendar', label: 'Booking' },
+      { key: 'Settings', icon: 'settings', label: 'Settings' },
     ];
   };
 
@@ -161,7 +162,7 @@ const SimpleTabNavigator = () => {
       case 'Booking':
         return <BookingScreen {...screenProps} />;
       case 'Settings':
-        return isAdmin ? <SettingsScreen {...screenProps} /> : <HomeScreen {...screenProps} />;
+        return <SettingsScreen {...screenProps} />; // ✅ ALLE User dürfen auf Einstellungen zugreifen
       case 'CRM':
         return <CRMScreen {...screenProps} />;
       case 'Config':
@@ -218,12 +219,11 @@ const SimpleTabNavigator = () => {
                 styles.iconContainer,
                 activeTab === tab.key && styles.activeIconContainer
               ]}>
-                <Text style={[
-                  styles.tabIcon,
-                  activeTab === tab.key && styles.activeTabIcon
-                ]}>
-                  {tab.icon}
-                </Text>
+                <Ionicons 
+                  name={tab.icon} 
+                  size={24} 
+                  color={activeTab === tab.key ? '#DC143C' : '#666'} 
+                />
               </View>
               <Text style={[
                 styles.tabText, 
@@ -310,14 +310,6 @@ const styles = StyleSheet.create({
   activeIconContainer: {
     backgroundColor: '#E8F5E8',
     transform: [{ scale: 1.1 }],
-  },
-  tabIcon: {
-    fontSize: 20, // ← Reduziert von 24 auf 20
-    opacity: 0.6,
-  },
-  activeTabIcon: {
-    fontSize: 22, // ← Reduziert von 26 auf 22
-    opacity: 1,
   },
   tabText: {
     fontSize: 10, // ← Reduziert von 11 auf 10

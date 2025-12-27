@@ -7,11 +7,11 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  ScrollView,
   Modal,
   FlatList,
 } from 'react-native';
 import ApiService from '../services/api';
+import ScrollableContainer from '../components/ScrollableContainer';
 
 const RegisterScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
@@ -29,11 +29,39 @@ const RegisterScreen = ({ navigation }) => {
   const [clubSearchText, setClubSearchText] = useState('');
   const [filteredClubs, setFilteredClubs] = useState([]);
 
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const showError = (message) => {
+    setErrorMessage(message);
+    setShowErrorModal(true);
+  };
+
+  const closeErrorModal = () => {
+    setShowErrorModal(false);
+    setErrorMessage('');
+  };
+
+  const showSuccess = (message) => {
+    setSuccessMessage(message);
+    setShowSuccessModal(true);
+  };
+
+  const closeSuccessModal = () => {
+    setShowSuccessModal(false);
+    setSuccessMessage('');
+    navigation.navigate('Login'); // Automatisch zum Login weiterleiten
+  };
+
   const updateField = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+    // Löscht Fehlermeldung wenn Nutzer tippt
+    if (errorMessage) setErrorMessage('');
   };
 
   // Lade Vereine beim Start
@@ -82,28 +110,60 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   const handleRegister = async () => {
-    // Validierung
-    if (!formData.name || !formData.email || !formData.password || !formData.vereinsname) {
-      Alert.alert('Fehler', 'Bitte alle Pflichtfelder ausfüllen');
+    console.log('handleRegister called', formData); // Debug-Log
+    
+    // Detaillierte Validierung für jedes Pflichtfeld
+    if (!formData.name || formData.name.trim() === '') {
+      showError('Bitte geben Sie Ihren Namen ein');
+      return;
+    }
+
+    if (!formData.email || formData.email.trim() === '') {
+      showError('Bitte geben Sie Ihre E-Mail-Adresse ein');
+      return;
+    }
+
+    // E-Mail Format Validierung
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      showError('Bitte geben Sie eine gültige E-Mail-Adresse ein');
+      return;
+    }
+
+    if (!formData.password || formData.password.trim() === '') {
+      showError('Bitte geben Sie ein Passwort ein');
+      return;
+    }
+
+    if (!formData.confirmPassword || formData.confirmPassword.trim() === '') {
+      showError('Bitte bestätigen Sie Ihr Passwort');
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      Alert.alert('Fehler', 'Passwörter stimmen nicht überein');
+      showError('Passwörter stimmen nicht überein');
       return;
     }
 
     if (formData.password.length < 3) {
-      Alert.alert('Fehler', 'Passwort muss mindestens 3 Zeichen lang sein');
+      showError('Passwort muss mindestens 3 Zeichen lang sein');
+      return;
+    }
+
+    if (!formData.vereinsname || formData.vereinsname.trim() === '') {
+      showError('Bitte wählen Sie einen Verein aus');
       return;
     }
 
     // Prüfe ob der ausgewählte Verein existiert
     const selectedClub = clubs.find(club => club.name === formData.vereinsname);
     if (!selectedClub) {
-      Alert.alert('Fehler', 'Bitte wählen Sie einen gültigen Verein aus der Liste');
+      showError('Bitte wählen Sie einen gültigen Verein aus der Liste');
       return;
     }
+
+    // Löscht Fehlermeldung wenn alles OK ist
+    setErrorMessage('');
 
     setLoading(true);
     try {
@@ -117,19 +177,10 @@ const RegisterScreen = ({ navigation }) => {
 
       const response = await ApiService.register(registerData);
 
-      Alert.alert(
-        'Registrierung erfolgreich',
-        `Willkommen ${response.user.name}! Ihr Account wartet auf Admin-Freigabe.`,
-        [
-          {
-            text: 'Zum Login',
-            onPress: () => navigation.navigate('Login')
-          }
-        ]
-      );
+      showSuccess(`Willkommen ${response.user.name}!\n\nIhre Registrierung war erfolgreich. Ihr Account wartet nun auf die Freischaltung durch einen Administrator.\n\nSie erhalten eine Benachrichtigung, sobald Ihr Account aktiviert wurde.`);
       
     } catch (error) {
-      Alert.alert('Registrierung Fehler', error.message);
+      showError('Registrierung fehlgeschlagen: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -140,13 +191,17 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollableContainer>
       <View style={styles.header}>
         <Text style={styles.title}>Registrierung</Text>
         <Text style={styles.subtitle}>JKB Grounds Tennis</Text>
       </View>
 
       <View style={styles.form}>
+        <View style={styles.requiredFieldsNotice}>
+          <Text style={styles.requiredFieldsText}>* Pflichtfelder</Text>
+        </View>
+        
         <TextInput
           style={styles.input}
           placeholder="Name *"
@@ -289,15 +344,59 @@ const RegisterScreen = ({ navigation }) => {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+
+      {/* Success Popup Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeSuccessModal}
+      >
+        <View style={styles.successModalOverlay}>
+          <View style={styles.successModalContent}>
+            <View style={styles.successModalHeader}>
+              <Text style={styles.successModalIcon}>✅</Text>
+              <Text style={styles.successModalTitle}>Registrierung erfolgreich!</Text>
+            </View>
+            <Text style={styles.successModalMessage}>{successMessage}</Text>
+            <TouchableOpacity 
+              style={styles.successModalButton}
+              onPress={closeSuccessModal}
+            >
+              <Text style={styles.successModalButtonText}>Zum Login</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Error Popup Modal */}
+      <Modal
+        visible={showErrorModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeErrorModal}
+      >
+        <View style={styles.errorModalOverlay}>
+          <View style={styles.errorModalContent}>
+            <View style={styles.errorModalHeader}>
+              <Text style={styles.errorModalIcon}>⚠️</Text>
+              <Text style={styles.errorModalTitle}>Eingabe fehlt</Text>
+            </View>
+            <Text style={styles.errorModalMessage}>{errorMessage}</Text>
+            <TouchableOpacity 
+              style={styles.errorModalButton}
+              onPress={closeErrorModal}
+            >
+              <Text style={styles.errorModalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </ScrollableContainer>
   );
 };
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#f5f5f5',
-    },
     header: {
       paddingTop: 60,
       paddingBottom: 30,
@@ -318,6 +417,7 @@ const styles = StyleSheet.create({
       margin: 20,
       padding: 20,
       borderRadius: 10,
+      marginBottom: 80, // Extra Platz am Ende des Formulars
       shadowColor: '#000',
       shadowOffset: {
         width: 0,
@@ -334,6 +434,28 @@ const styles = StyleSheet.create({
       padding: 15,
       marginBottom: 15,
       fontSize: 16,
+    },
+    requiredFieldsNotice: {
+      marginBottom: 15,
+    },
+    requiredFieldsText: {
+      fontSize: 14,
+      color: '#666',
+      textAlign: 'right',
+      fontStyle: 'italic',
+    },
+    errorContainer: {
+      backgroundColor: '#ffebee',
+      borderLeftWidth: 4,
+      borderLeftColor: '#f44336',
+      padding: 15,
+      marginBottom: 20,
+      borderRadius: 5,
+    },
+    errorText: {
+      color: '#c62828',
+      fontSize: 16,
+      fontWeight: 'bold',
     },
     infoBox: {
       backgroundColor: '#e8f4f8',
@@ -457,6 +579,118 @@ const styles = StyleSheet.create({
     },
     loadingIndicator: {
       marginVertical: 20,
+    },
+    successModalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    successModalContent: {
+      backgroundColor: '#fff',
+      borderRadius: 15,
+      padding: 25,
+      width: '90%',
+      maxWidth: 450,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+    },
+    successModalHeader: {
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    successModalIcon: {
+      fontSize: 50,
+      marginBottom: 10,
+    },
+    successModalTitle: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      color: '#27AE60',
+      textAlign: 'center',
+    },
+    successModalMessage: {
+      fontSize: 16,
+      color: '#333',
+      textAlign: 'center',
+      marginBottom: 30,
+      lineHeight: 24,
+    },
+    successModalButton: {
+      backgroundColor: '#27AE60',
+      paddingHorizontal: 40,
+      paddingVertical: 15,
+      borderRadius: 25,
+      minWidth: 150,
+    },
+    successModalButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
+    errorModalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    errorModalContent: {
+      backgroundColor: '#fff',
+      borderRadius: 15,
+      padding: 25,
+      width: '85%',
+      maxWidth: 400,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+    },
+    errorModalHeader: {
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    errorModalIcon: {
+      fontSize: 40,
+      marginBottom: 10,
+    },
+    errorModalTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: '#DC143C',
+      textAlign: 'center',
+    },
+    errorModalMessage: {
+      fontSize: 16,
+      color: '#333',
+      textAlign: 'center',
+      marginBottom: 25,
+      lineHeight: 22,
+    },
+    errorModalButton: {
+      backgroundColor: '#DC143C',
+      paddingHorizontal: 40,
+      paddingVertical: 12,
+      borderRadius: 25,
+      minWidth: 120,
+    },
+    errorModalButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: 'bold',
+      textAlign: 'center',
     },
   });
   
