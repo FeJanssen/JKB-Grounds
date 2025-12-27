@@ -13,6 +13,7 @@ import {
   RefreshControl,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { crmService } from '../services/crmService'; // ← Backend Service importieren
 
@@ -353,7 +354,7 @@ const CRMScreen = () => {
         
         {/* SUCHFUNKTION */}
         <View style={styles.searchContainer}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Nach Name oder Email suchen..."
@@ -410,7 +411,7 @@ const CRMScreen = () => {
             onPress={() => setRegistrationsModal(true)}
           >
             <View style={styles.buttonContent}>
-              <Text style={styles.buttonIcon}>📢</Text>
+              <Ionicons name="notifications-outline" size={24} color="#f59e0b" style={styles.buttonIcon} />
               <View style={styles.buttonTextContainer}>
                 <Text style={styles.buttonTitle}>Registrierungen</Text>
                 <Text style={styles.buttonSubtitle}>{pendingRegistrations.length} ausstehend</Text>
@@ -424,7 +425,11 @@ const CRMScreen = () => {
             disabled={refreshing}
           >
             <View style={styles.buttonContent}>
-              <Text style={styles.buttonIcon}>{refreshing ? '⏳' : '🔄'}</Text>
+              {refreshing ? (
+                <ActivityIndicator size="small" color="#6b7280" style={styles.buttonIcon} />
+              ) : (
+                <Ionicons name="refresh" size={24} color="#6b7280" style={styles.buttonIcon} />
+              )}
               <View style={styles.buttonTextContainer}>
                 <Text style={styles.buttonTitle}>Aktualisieren</Text>
                 <Text style={styles.buttonSubtitle}>Daten neu laden</Text>
@@ -437,7 +442,7 @@ const CRMScreen = () => {
             onPress={() => setAddPersonModal(true)}
           >
             <View style={styles.buttonContent}>
-              <Text style={styles.buttonIcon}>👤</Text>
+              <Ionicons name="person-add" size={24} color="#10b981" style={styles.buttonIcon} />
               <View style={styles.buttonTextContainer}>
                 <Text style={styles.buttonTitle}>Person hinzufügen</Text>
                 <Text style={styles.buttonSubtitle}>Neues Mitglied</Text>
@@ -898,18 +903,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   
-  // HEADER - Kompakter
+  // Simple Clean Header
   header: {
-    backgroundColor: '#DC143C',
-    paddingTop: 45,
-    paddingBottom: 15,
+    backgroundColor: '#fff',
+    paddingTop: 20, // Safe area padding
+    paddingBottom: 20,
     paddingHorizontal: 20,
-    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1e293b',
+    textAlign: 'center',
   },
 
   // CONTENT - WEB-KOMPATIBLES SCROLLING - EXAKT wie SettingsScreen
@@ -967,9 +974,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   searchIcon: {
-    fontSize: 16,
     marginRight: 10,
-    color: '#666',
+    alignSelf: 'center',
   },
   searchInput: {
     flex: 1,
@@ -1038,8 +1044,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonIcon: {
-    fontSize: 24,
     marginRight: 15,
+    alignSelf: 'center',
   },
   buttonTextContainer: {
     flex: 1,

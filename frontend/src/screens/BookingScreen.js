@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
   scrollableContent: {
     flex: 1,
     padding: 20,
-    paddingBottom: 100,     // ✅ Platz für Bottom Tab Bar
+    paddingBottom: 200,     // ✅ Mehr Platz für Bottom Tab Bar (von 100 auf 200 erhöht)
     height: '70vh',         // ✅ Feste Höhe für Web
     overflow: 'auto',       // ✅ Eigenes Scrolling
     maxHeight: '90vh',      // ✅ Max-Height Begrenzung

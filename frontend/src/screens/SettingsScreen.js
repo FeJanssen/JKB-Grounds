@@ -11,6 +11,7 @@ import {
   TextInput,
   Modal,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '../context/UserContext';
 import { API_BASE_URL } from '../config/baseUrl';
 
@@ -509,9 +510,9 @@ const SettingsScreen = ({ changeTab }) => {
 
   return (
     <View style={styles.container}>
-      {/* ✅ FIXED HEADER wie im CRM */}
+      {/* Simple Clean Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>⚙️ Einstellungen</Text>
+        <Text style={styles.headerTitle}>Einstellungen</Text>
       </View>
 
       {/* ✅ SCROLLABLE CONTENT mit fester Height wie im CRM */}
@@ -528,13 +529,16 @@ const SettingsScreen = ({ changeTab }) => {
       >
         {/* Buchungen Sektion - VOLLBREITE ZEILEN */}
         <View style={styles.firstSectionHeader}>
-          <Text style={styles.sectionTitle}>📅 Meine Buchungen ({userBookings.length})</Text>
+          <View style={styles.sectionTitleContainer}>
+            <Ionicons name="calendar-outline" size={20} color="#DC143C" style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>Meine Buchungen ({userBookings.length})</Text>
+          </View>
         </View>
         
         {userBookings.length === 0 ? (
           <View style={styles.fullWidthRow}>
             <View style={styles.rowContent}>
-              <Text style={styles.rowIcon}>📅</Text>
+              <Ionicons name="calendar-outline" size={22} color="#DC143C" style={styles.rowIcon} />
               <View style={styles.rowTexts}>
                 <Text style={styles.rowTitle}>Keine zukünftigen Buchungen</Text>
                 <Text style={styles.rowSubtitle}>Jetzt einen Platz buchen</Text>
@@ -551,13 +555,13 @@ const SettingsScreen = ({ changeTab }) => {
           userBookings.map((booking) => (
             <View key={booking.id} style={styles.fullWidthRow}>
               <View style={styles.rowContent}>
-                <Text style={styles.rowIcon}>🎾</Text>
+                <Ionicons name="tennisball" size={22} color="#DC143C" style={styles.rowIcon} />
                 <View style={styles.rowTexts}>
                   <Text style={styles.rowTitle}>
                     {booking.platz?.name || 'Platz ' + booking.platz_id}
                   </Text>
                   <Text style={styles.rowSubtitle}>
-                    📅 {formatDate(booking.datum)} • 🕐 {formatBookingTime(booking)}
+                    {formatDate(booking.datum)} • {formatBookingTime(booking)}
                   </Text>
                 </View>
                 <TouchableOpacity 
@@ -573,159 +577,174 @@ const SettingsScreen = ({ changeTab }) => {
 
         {/* Profil Sektion - VOLLBREITE ZEILEN */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>👤 Mein Profil</Text>
+          <View style={styles.sectionTitleContainer}>
+            <Ionicons name="person-outline" size={20} color="#DC143C" style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>Mein Profil</Text>
+          </View>
         </View>
         
         <TouchableOpacity style={styles.fullWidthRow} onPress={() => startEditProfile('name')}>
           <View style={styles.rowContent}>
-            <Text style={styles.rowIcon}>👤</Text>
+            <Ionicons name="person-outline" size={22} color="#DC143C" style={styles.rowIcon} />
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>Name</Text>
               <Text style={styles.rowSubtitle}>{userProfile.name || 'Nicht angegeben'}</Text>
             </View>
-            <Text style={styles.rowArrow}>✏️</Text>
+            <Ionicons name="create-outline" size={20} color="#007AFF" style={styles.rowArrow} />
           </View>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.fullWidthRow} onPress={() => startEditProfile('email')}>
           <View style={styles.rowContent}>
-            <Text style={styles.rowIcon}>✉️</Text>
+            <Ionicons name="mail-outline" size={22} color="#DC143C" style={styles.rowIcon} />
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>E-Mail</Text>
               <Text style={styles.rowSubtitle}>{userProfile.email || 'Nicht angegeben'}</Text>
             </View>
-            <Text style={styles.rowArrow}>✏️</Text>
+            <Ionicons name="create-outline" size={20} color="#007AFF" style={styles.rowArrow} />
           </View>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.fullWidthRow} onPress={() => startEditProfile('geschlecht')}>
           <View style={styles.rowContent}>
-            <Text style={styles.rowIcon}>⚧️</Text>
+            <Ionicons name="people-outline" size={22} color="#DC143C" style={styles.rowIcon} />
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>Geschlecht</Text>
               <Text style={styles.rowSubtitle}>{userProfile.geschlecht || 'Nicht angegeben'}</Text>
             </View>
-            <Text style={styles.rowArrow}>✏️</Text>
+            <Ionicons name="create-outline" size={20} color="#007AFF" style={styles.rowArrow} />
           </View>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.fullWidthRow} onPress={() => startEditProfile('password')}>
           <View style={styles.rowContent}>
-            <Text style={styles.rowIcon}>🔒</Text>
+            <Ionicons name="lock-closed-outline" size={22} color="#DC143C" style={styles.rowIcon} />
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>Passwort</Text>
               <Text style={styles.rowSubtitle}>••••••••</Text>
             </View>
-            <Text style={styles.rowArrow}>✏️</Text>
+            <Ionicons name="create-outline" size={20} color="#007AFF" style={styles.rowArrow} />
           </View>
         </TouchableOpacity>
 
         {/* ✅ DSGVO & DATENSCHUTZ SEKTION - VOLLBREITE ZEILEN */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>🔒 Datenschutz & DSGVO</Text>
+          <View style={styles.sectionTitleContainer}>
+            <Ionicons name="shield-checkmark-outline" size={20} color="#DC143C" style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>Datenschutz & DSGVO</Text>
+          </View>
         </View>
         
         <TouchableOpacity style={styles.fullWidthRow} onPress={handleDataExport}>
           <View style={styles.rowContent}>
-            <Text style={styles.rowIcon}>📁</Text>
+            <Ionicons name="download-outline" size={22} color="#DC143C" style={styles.rowIcon} />
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>Meine Daten exportieren</Text>
               <Text style={styles.rowSubtitle}>Alle gespeicherten Daten als JSON herunterladen</Text>
             </View>
-            <Text style={styles.rowArrow}>→</Text>
+            <Ionicons name="chevron-forward" size={20} color="#666" style={styles.rowArrow} />
           </View>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.fullWidthRow} onPress={handleDataDeletion}>
           <View style={styles.rowContent}>
-            <Text style={styles.rowIcon}>🗑️</Text>
+            <Ionicons name="trash-outline" size={22} color="#DC143C" style={styles.rowIcon} />
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>Konto & Daten löschen</Text>
               <Text style={styles.rowSubtitle}>Alle persönlichen Daten unwiderruflich entfernen</Text>
             </View>
-            <Text style={styles.rowArrow}>→</Text>
+            <Ionicons name="chevron-forward" size={20} color="#666" style={styles.rowArrow} />
           </View>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.fullWidthRow} onPress={handleDataPolicy}>
           <View style={styles.rowContent}>
-            <Text style={styles.rowIcon}>�</Text>
+            <Ionicons name="shield-checkmark-outline" size={22} color="#DC143C" style={styles.rowIcon} />
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>Datenschutzerklärung</Text>
               <Text style={styles.rowSubtitle}>Wie wir Ihre Daten verwenden</Text>
             </View>
-            <Text style={styles.rowArrow}>→</Text>
+            <Ionicons name="chevron-forward" size={20} color="#666" style={styles.rowArrow} />
           </View>
         </TouchableOpacity>
 
         {/* ✅ APP-EINSTELLUNGEN SEKTION - VOLLBREITE ZEILEN */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>⚙️ App-Einstellungen</Text>
+          <View style={styles.sectionTitleContainer}>
+            <Ionicons name="settings-outline" size={20} color="#DC143C" style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>App-Einstellungen</Text>
+          </View>
         </View>
         
         <TouchableOpacity style={styles.fullWidthRow} onPress={handleNotificationSettings}>
           <View style={styles.rowContent}>
-            <Text style={styles.rowIcon}>🔔</Text>
+            <Ionicons name="notifications-outline" size={22} color="#DC143C" style={styles.rowIcon} />
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>Benachrichtigungen</Text>
               <Text style={styles.rowSubtitle}>Push-Nachrichten verwalten</Text>
             </View>
-            <Text style={styles.rowArrow}>→</Text>
+            <Ionicons name="chevron-forward" size={20} color="#666" style={styles.rowArrow} />
           </View>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.fullWidthRow} onPress={handleLanguageSettings}>
           <View style={styles.rowContent}>
-            <Text style={styles.rowIcon}>🌐</Text>
+            <Ionicons name="language-outline" size={22} color="#DC143C" style={styles.rowIcon} />
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>Sprache</Text>
               <Text style={styles.rowSubtitle}>Deutsch</Text>
             </View>
-            <Text style={styles.rowArrow}>→</Text>
+            <Ionicons name="chevron-forward" size={20} color="#666" style={styles.rowArrow} />
           </View>
         </TouchableOpacity>
 
         {/* ✅ RECHTLICHES & SUPPORT SEKTION - VOLLBREITE ZEILEN */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>📄 Rechtliches & Support</Text>
+          <View style={styles.sectionTitleContainer}>
+            <Ionicons name="document-text-outline" size={20} color="#DC143C" style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>Rechtliches & Support</Text>
+          </View>
         </View>
         
         <TouchableOpacity style={styles.fullWidthRow} onPress={handleTermsOfService}>
           <View style={styles.rowContent}>
-            <Text style={styles.rowIcon}>📜</Text>
+            <Ionicons name="document-outline" size={22} color="#DC143C" style={styles.rowIcon} />
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>Allgemeine Geschäftsbedingungen</Text>
               <Text style={styles.rowSubtitle}>Nutzungsbedingungen lesen</Text>
             </View>
-            <Text style={styles.rowArrow}>→</Text>
+            <Ionicons name="chevron-forward" size={20} color="#666" style={styles.rowArrow} />
           </View>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.fullWidthRow} onPress={handleImprint}>
           <View style={styles.rowContent}>
-            <Text style={styles.rowIcon}>🏢</Text>
+            <Ionicons name="business-outline" size={22} color="#DC143C" style={styles.rowIcon} />
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>Impressum</Text>
               <Text style={styles.rowSubtitle}>Anbieterinformationen</Text>
             </View>
-            <Text style={styles.rowArrow}>→</Text>
+            <Ionicons name="chevron-forward" size={20} color="#666" style={styles.rowArrow} />
           </View>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.fullWidthRow} onPress={handleSupport}>
           <View style={styles.rowContent}>
-            <Text style={styles.rowIcon}>💬</Text>
+            <Ionicons name="chatbubble-outline" size={22} color="#DC143C" style={styles.rowIcon} />
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>Support kontaktieren</Text>
               <Text style={styles.rowSubtitle}>Hilfe und Unterstützung</Text>
             </View>
-            <Text style={styles.rowArrow}>→</Text>
+            <Ionicons name="chevron-forward" size={20} color="#666" style={styles.rowArrow} />
           </View>
         </TouchableOpacity>
 
         {/* ✅ APP-INFO SEKTION - VOLLBREITE ZEILE */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>ℹ️ App-Information</Text>
+          <View style={styles.sectionTitleContainer}>
+            <Ionicons name="information-circle-outline" size={20} color="#DC143C" style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>App-Information</Text>
+          </View>
         </View>
         
         <View style={styles.fullWidthRow}>
@@ -866,24 +885,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.5,
   },
-  // ✅ ULTRA-MODERN HEADER - Gradient + Glasmorphism
+  // Simple Clean Header
   header: {
-    backgroundColor: '#DC143C',
-    paddingTop: 50, // Mehr Padding für moderne Optik
-    paddingBottom: 25,
-    paddingHorizontal: 25,
-    alignItems: 'center',
-    shadowColor: 'rgba(220, 20, 60, 0.4)',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 15,
+    backgroundColor: '#fff',
+    paddingTop: 20, // Safe area padding
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
   },
   headerTitle: {
-    fontSize: 28, // Größer und imposanter
-    fontWeight: '800', // Extra bold
-    color: '#fff',
-    letterSpacing: 1.2,
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1e293b',
     textAlign: 'center',
   },
   // ✅ VOLLBREITE CONTENT AREA - KEIN PADDING
@@ -906,6 +920,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     textTransform: 'none', // Normale Kapitalisierung
     paddingHorizontal: 20, // Nur Text hat Padding, nicht Container
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  sectionIcon: {
+    marginRight: 12,
+    alignSelf: 'center',
   },
   bookingCard: {
     backgroundColor: '#ffffff',
@@ -1232,10 +1255,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   rowIcon: {
-    fontSize: 22,
     marginRight: 16,
     width: 30,
     textAlign: 'center',
+    alignSelf: 'center',
   },
   rowTexts: {
     flex: 1,
@@ -1252,9 +1275,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   rowArrow: {
-    fontSize: 18,
-    color: '#94a3b8',
     marginLeft: 8,
+    alignSelf: 'center',
   },
   
   // ✅ LOGOUT ROW STYLES

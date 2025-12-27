@@ -10,6 +10,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 const HomeScreen = ({ changeTab }) => {
   const [loading, setLoading] = useState(true);
@@ -216,7 +217,7 @@ const HomeScreen = ({ changeTab }) => {
             }}
           >
             <View style={styles.quickAccessContent}>
-              <Text style={styles.quickAccessIcon}>🎾</Text>
+              <Ionicons name="tennisball" size={32} color="#007AFF" style={styles.quickAccessIcon} />
               <View style={styles.quickAccessText}>
                 <Text style={styles.quickAccessTitle}>Platz buchen</Text>
                 <Text style={styles.quickAccessSubtitle}>
@@ -239,7 +240,7 @@ const HomeScreen = ({ changeTab }) => {
             }}
           >
             <View style={styles.quickAccessContent}>
-              <Text style={styles.quickAccessIcon}>📅</Text>
+              <Ionicons name="calendar-outline" size={32} color="#007AFF" style={styles.quickAccessIcon} />
               <View style={styles.quickAccessText}>
                 <Text style={styles.quickAccessTitle}>Termine verwalten</Text>
                 <Text style={styles.quickAccessSubtitle}>Buchungen ansehen und stornieren</Text>
@@ -342,8 +343,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   quickAccessIcon: {
-    fontSize: 25,
     marginRight: 15,
+    alignSelf: 'center',
   },
   quickAccessText: {
     flex: 1,
