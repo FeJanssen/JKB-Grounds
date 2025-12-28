@@ -183,37 +183,76 @@ const ConfiguratorScreen = () => {
 
   const loadRoles = async () => {
     try {
-      console.log('👥 Lade Rollen (lokale Fallback-Daten)...');
-      
-      // Fallback Rollen für Admin-Interface
-      const fallbackRoles = [
-        { 
-          id: '1f5a5ff7-c0cb-449d-b30c-a86c691be432', 
-          name: 'Admin', 
-          description: 'Vollzugriff auf alle Funktionen',
-          permissions: ['booking_create', 'booking_edit', 'booking_delete', 'user_manage', 'club_manage']
-        },
-        { 
-          id: '2e4a5ff7-c0cb-449d-b30c-a86c691be433', 
-          name: 'Mitglied', 
-          description: 'Standard Mitglied mit Buchungsrechten',
-          permissions: ['booking_create', 'booking_view']
-        },
-        { 
-          id: '3d3a5ff7-c0cb-449d-b30c-a86c691be434', 
-          name: 'Gast', 
-          description: 'Eingeschränkte Rechte für Gäste',
-          permissions: ['booking_view']
+      const vereinId = currentVereinId;
+      if (vereinId) {
+        console.log('👥 Lade Rollen für Verein:', vereinId);
+        
+        const response = await fetch(`${API_BASE_URL}/api/roles/verein/${vereinId}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('📋 Rollen API Response:', data);
+          
+          if (Array.isArray(data)) {
+            setRoles(data);
+            console.log('✅ Rollen aus API geladen:', data.length);
+          } else if (data.roles && Array.isArray(data.roles)) {
+            setRoles(data.roles);
+            console.log('✅ Rollen aus data.roles geladen:', data.roles.length);
+          } else {
+            console.log('⚠️ Unerwartete Rollen-Struktur:', data);
+            // Fallback zu lokalen Rollen nur wenn API keine Daten liefert
+            setRoles(getFallbackRoles());
+          }
+        } else {
+          console.log(`❌ Rollen API Fehler: ${response.status} - ${response.statusText}`);
+          console.log('🔧 Verwende Fallback-Rollen');
+          setRoles(getFallbackRoles());
         }
-      ];
-      
-      setRoles(fallbackRoles);
-      console.log('✅ Fallback-Rollen geladen:', fallbackRoles.length);
-      
+      } else {
+        console.log('⚠️ Keine Verein-ID für Rollen verfügbar - verwende Fallback');
+        setRoles(getFallbackRoles());
+      }
     } catch (error) {
-      console.error('❌ Fehler beim Laden der Rollen:', error);
-      setRoles([]);
+      console.log('❌ Fehler beim Laden der Rollen:', error);
+      console.log('🔧 Verwende Fallback-Rollen');
+      setRoles(getFallbackRoles());
     }
+  };
+
+  const getFallbackRoles = () => {
+    return [
+      { 
+        id: '1f5a5ff7-c0cb-449d-b30c-a86c691be432', 
+        name: 'Admin', 
+        description: 'Vollzugriff auf alle Funktionen',
+        permissions: ['booking_create', 'booking_edit', 'booking_delete', 'user_manage', 'club_manage']
+      },
+      { 
+        id: '0a198b5c-a35b-43ce-9616-12a6c2a1859d', 
+        name: 'Mitglied', 
+        description: 'Standard Mitglied mit Buchungsrechten',
+        permissions: ['booking_create', 'booking_view']
+      },
+      { 
+        id: '0f7e4674-87b6-4c2b-ac26-6c149baa4ad2', 
+        name: 'Gast', 
+        description: 'Gast mit eingeschränkten Rechten',
+        permissions: ['booking_view']
+      },
+      { 
+        id: '5f03dec2-572c-48b1-90a0-2053cb0e945b', 
+        name: 'Mannschaftsführer', 
+        description: 'Leitung von Mannschaften',
+        permissions: ['booking_create', 'booking_view', 'team_manage']
+      },
+      { 
+        id: 'e096ce8d-dcbc-4d00-8c6f-23d3471cfc52', 
+        name: 'Trainer', 
+        description: 'Training und Betreuung',
+        permissions: ['booking_create', 'booking_view', 'training_manage']
+      }
+    ];
   };
 
   const loadPermissionsByVereinId = async (vereinId) => {
