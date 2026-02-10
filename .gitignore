@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Expo
+.expo/
+dist/
+frontend/dist/
+frontend/.expo/
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# Environment files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Backend Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Lambda packages (keep local for backup, but don't deploy)
+backend/*.zip
+backend/**/*.zip
+
+# Temp directories
+backend/temp_working/
+backend/lambda_*/
+backend/*_temp/
+
+# Log files
+*.log
