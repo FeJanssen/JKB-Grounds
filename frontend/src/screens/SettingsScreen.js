@@ -333,30 +333,21 @@ const SettingsScreen = ({ changeTab }) => {
   // ✅ DSGVO-KONFORME DATENEXPORT-FUNKTION
   const handleDataExport = async () => {
     console.log('🔍 handleDataExport wurde aufgerufen');
-    Alert.alert(
-      'Datenexport (Art. 20 DSGVO)',
-      'Sie haben das Recht, Ihre personenbezogenen Daten in einem strukturierten, gängigen und maschinenlesbaren Format zu erhalten.\n\nDieser Export enthält alle Ihre in der App gespeicherten Daten.',
-      [
-        { text: 'Abbrechen', style: 'cancel' },
-        { 
-          text: 'Daten exportieren',
-          onPress: async () => {
-            try {
-              console.log('🔍 Export wird gestartet...');
-              const userId = currentUser?.id;
-              console.log('🔍 User ID:', userId);
-              if (!userId) {
-                throw new Error('Benutzer-ID nicht verfügbar');
-              }
-              await exportUserData(userId);
-            } catch (error) {
-              console.error('Datenexport Fehler:', error);
-              Alert.alert('Fehler', error.message);
-            }
-          }
-        }
-      ]
-    );
+    
+    try {
+      console.log('🔍 Export wird direkt gestartet...');
+      const userId = currentUser?.id;
+      console.log('🔍 User ID:', userId);
+      if (!userId) {
+        throw new Error('Benutzer-ID nicht verfügbar');
+      }
+      console.log('🔍 Rufe exportUserData auf...');
+      await exportUserData(userId);
+      console.log('🔍 Export erfolgreich abgeschlossen');
+    } catch (error) {
+      console.error('🔍 Datenexport Fehler:', error);
+      Alert.alert('Fehler', error.message || 'Export fehlgeschlagen');
+    }
   };
 
   const performDataExport = async () => {
