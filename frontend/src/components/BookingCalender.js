@@ -488,13 +488,27 @@ const BookingCalendar = ({
               if (!isBookable) {
                 displayText = 'Gesperrt';
               } else if (isBooked && bookingInfo) {
-                // Wenn öffentlich (buchungstyp === 'public') und Notizen vorhanden, zeige Notizen
-                if (bookingInfo.buchungstyp === 'public' && bookingInfo.notizen) {
-                  console.log('✅ Zeige Notizen für öffentliche Buchung:', bookingInfo.notizen);
-                  displayText = bookingInfo.notizen;
+                // VERBESSERT: Zeige IMMER Notizen wenn vorhanden, unabhängig vom buchungstyp
+                if (bookingInfo.notizen && bookingInfo.notizen.trim()) {
+                  // Extrahiere nur den Beschreibungstext aus Serienbuchungen
+                  let cleanedNotes = bookingInfo.notizen;
+                  
+                  // Entferne "Platz X - " vom Anfang falls vorhanden  
+                  cleanedNotes = cleanedNotes.replace(/^Platz\s+\d+\s*-\s*/, '');
+                  
+                  // Entferne "Woche X/Y" Pattern
+                  cleanedNotes = cleanedNotes.replace(/\s*-\s*Woche\s+\d+\/\d+/g, '');
+                  
+                  // Entferne alles nach " | " (falls User-Notes vorhanden)
+                  if (cleanedNotes.includes(' | ')) {
+                    cleanedNotes = cleanedNotes.split(' | ')[1]; // Nimm den Teil nach " | "
+                  }
+                  
+                  displayText = cleanedNotes.trim() || 'Gebucht';
+                  console.log('✅ Zeige bereinigte Notizen:', displayText, 'Original:', bookingInfo.notizen);
                 } else {
-                  console.log('⚠️ Zeige "Gebucht" - buchungstyp:', bookingInfo.buchungstyp, 'notizen:', bookingInfo.notizen);
                   displayText = 'Gebucht';
+                  console.log('⚠️ Keine Notizen vorhanden - zeige "Gebucht"');
                 }
               }
               
