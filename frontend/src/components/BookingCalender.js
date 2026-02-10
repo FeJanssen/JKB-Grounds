@@ -34,24 +34,6 @@ const BookingCalendar = ({
   // ✅ NEUES STATE FÜR NOTIZEN-POPUP
   const [notesModalVisible, setNotesModalVisible] = useState(false);
   const [selectedBookingNotes, setSelectedBookingNotes] = useState(null);
-  
-  // ✅ NEU: Color-Picker für öffentliche Buchungen
-  const [colorPickerVisible, setColorPickerVisible] = useState(false);
-  const [selectedPublicColor, setSelectedPublicColor] = useState('#4CAF50'); // Default grün
-  
-  // ✅ Verfügbare Farben für öffentliche Buchungen
-  const publicBookingColors = [
-    { name: 'Grün', value: '#4CAF50' },
-    { name: 'Blau', value: '#2196F3' },
-    { name: 'Orange', value: '#FF9800' },
-    { name: 'Lila', value: '#9C27B0' },
-    { name: 'Türkis', value: '#009688' },
-    { name: 'Indigo', value: '#3F51B5' },
-    { name: 'Pink', value: '#E91E63' },
-    { name: 'Braun', value: '#795548' },
-    { name: 'Grau', value: '#607D8B' },
-    { name: 'Gelb', value: '#FFEB3B' }
-  ];
 
   // ✅ SICHERE BUCHUNGEN-SETZUNG
   const setSafeBookings = (data) => {
@@ -532,12 +514,14 @@ const BookingCalendar = ({
               
               // Bestimme Zell-Style basierend auf Buchungstyp
               const isPublicBooking = isBooked && bookingInfo && bookingInfo.buchungstyp === 'public';
-              const dynamicCellStyle = isPublicBooking 
-                ? { backgroundColor: selectedPublicColor + '33' } // 33 = 20% opacity
+              const bookingColor = isPublicBooking && bookingInfo.color ? bookingInfo.color : null;
+              
+              const dynamicCellStyle = bookingColor 
+                ? { backgroundColor: bookingColor + '33' } // 33 = 20% opacity
                 : {};
                 
-              const dynamicTextStyle = isPublicBooking 
-                ? { color: selectedPublicColor, fontWeight: 'bold' }
+              const dynamicTextStyle = bookingColor 
+                ? { color: bookingColor, fontWeight: 'bold' }
                 : {};
 
               return (
@@ -545,9 +529,9 @@ const BookingCalendar = ({
                   key={`${court.id}-${timeSlot}`}
                   style={[
                     styles.bookingCell,
-                    isBooked && !isPublicBooking && styles.bookedCell, // Private Buchungen rot
+                    isBooked && !bookingColor && styles.bookedCell, // Standard gebuchte Zellen
                     !isBookable && styles.notBookableCell,
-                    dynamicCellStyle // Öffentliche Buchungen bekommen gewählte Farbe
+                    dynamicCellStyle // Öffentliche Buchungen mit gewählter Farbe
                   ]}
                   onPress={() => {
                     console.log('🔥 TouchableOpacity pressed!', { court: court.name, timeSlot, isBooked, isBookable });
@@ -558,9 +542,9 @@ const BookingCalendar = ({
                   <Text 
                     style={[
                       styles.bookingCellText,
-                      isBooked && !isPublicBooking && styles.bookedCellText, // Private Buchungen rot
+                      isBooked && !bookingColor && styles.bookedCellText, // Standard gebuchter Text
                       !isBookable && styles.notBookableCellText,
-                      dynamicTextStyle // Öffentliche Buchungen bekommen gewählte Textfarbe
+                      dynamicTextStyle // Öffentliche Buchungen mit gewählter Textfarbe
                     ]}
                     numberOfLines={2}
                     ellipsizeMode="tail"
@@ -576,27 +560,18 @@ const BookingCalendar = ({
 
       {/* Footer */}
       <View style={styles.footer}>
-        {/* ✅ Color-Picker Button */}
-        <TouchableOpacity 
-          style={styles.colorPickerButton}
-          onPress={() => setColorPickerVisible(true)}
-        >
-          <View style={[styles.colorIndicator, { backgroundColor: selectedPublicColor }]} />
-          <Text style={styles.colorPickerText}>Öffentliche Buchungen</Text>
-        </TouchableOpacity>
-        
         <View style={styles.legend}>
           <View style={styles.legendItem}>
             <View style={[styles.legendColor, styles.freeColor]} />
             <Text style={styles.legendText}>Frei</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: selectedPublicColor }]} />
-            <Text style={styles.legendText}>Öffentlich</Text>
+            <View style={[styles.legendColor, styles.freeColor]} />
+            <Text style={styles.legendText}>Frei</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendColor, styles.bookedColor]} />
-            <Text style={styles.legendText}>Privat</Text>
+            <Text style={styles.legendText}>Gebucht</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendColor, styles.blockedColor]} />
@@ -665,52 +640,6 @@ const BookingCalendar = ({
             >
               <Text style={styles.notesModalButtonText}>Schließen</Text>
             </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* ✅ COLOR-PICKER MODAL */}
-      <Modal
-        visible={colorPickerVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setColorPickerVisible(false)}
-      >
-        <View style={styles.colorModalOverlay}>
-          <View style={styles.colorModalContent}>
-            <View style={styles.colorModalHeader}>
-              <Text style={styles.colorModalTitle}>🎨 Farbe für öffentliche Buchungen</Text>
-            </View>
-            
-            <View style={styles.colorGrid}>
-              {publicBookingColors.map((color) => (
-                <TouchableOpacity
-                  key={color.value}
-                  style={[
-                    styles.colorOption,
-                    { backgroundColor: color.value },
-                    selectedPublicColor === color.value && styles.selectedColorOption
-                  ]}
-                  onPress={() => {
-                    setSelectedPublicColor(color.value);
-                    setColorPickerVisible(false);
-                  }}
-                >
-                  {selectedPublicColor === color.value && (
-                    <Text style={styles.colorOptionCheck}>✓</Text>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-            
-            <View style={styles.colorModalButtons}>
-              <TouchableOpacity 
-                style={styles.colorModalButton}
-                onPress={() => setColorPickerVisible(false)}
-              >
-                <Text style={styles.colorModalButtonText}>Abbrechen</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </Modal>
@@ -1071,104 +1000,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
-  },
-
-  // ✅ COLOR-PICKER STYLES
-  colorPickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 8,
-    borderRadius: 8,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  colorIndicator: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    marginRight: 8,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  colorPickerText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  colorModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  colorModalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    margin: 20,
-    maxWidth: 320,
-    width: '90%',
-  },
-  colorModalHeader: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  colorModalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-  },
-  colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  colorOption: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    margin: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-  },
-  selectedColorOption: {
-    borderWidth: 4,
-    borderColor: '#333',
-  },
-  colorOptionCheck: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  colorModalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  colorModalButton: {
-    backgroundColor: '#DC143C',
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 25,
-  },
-  colorModalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });
 

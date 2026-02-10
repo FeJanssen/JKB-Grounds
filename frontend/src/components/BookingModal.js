@@ -27,6 +27,24 @@ const BookingModal = ({
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   
+  // ✅ NEU: COLOR-PICKER für öffentliche Buchungen
+  const [selectedBookingColor, setSelectedBookingColor] = useState('#4CAF50'); // Default grün
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  
+  // ✅ Verfügbare Farben für öffentliche Buchungen
+  const bookingColors = [
+    { name: 'Grün', value: '#4CAF50' },
+    { name: 'Blau', value: '#2196F3' },
+    { name: 'Orange', value: '#FF9800' },
+    { name: 'Lila', value: '#9C27B0' },
+    { name: 'Türkis', value: '#009688' },
+    { name: 'Indigo', value: '#3F51B5' },
+    { name: 'Pink', value: '#E91E63' },
+    { name: 'Braun', value: '#795548' },
+    { name: 'Grau', value: '#607D8B' },
+    { name: 'Gelb', value: '#FFEB3B' }
+  ];
+  
   // ✅ SERIEN-BUCHUNG STATES
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringWeeks, setRecurringWeeks] = useState(8); // Default 8 Wochen
@@ -77,6 +95,8 @@ const BookingModal = ({
         duration: parseInt(duration),
         type: isPublic ? 'public' : 'private', // ✅ DYNAMISCH: Abhängig vom Toggle
         notes: notes || '',  // ✅ Leerer String falls keine Notizen
+        // ✅ NEU: Farbe für öffentliche Buchungen
+        ...(isPublic && { color: selectedBookingColor }),
         // ✅ SERIEN-BUCHUNG INFO - Bei aktivierter Serien-Buchung (private UND public)
         ...(isRecurring && {
           is_recurring: true,
@@ -259,6 +279,47 @@ const BookingModal = ({
                 </View>
               </View>
             </View>
+
+            {/* ✅ COLOR-PICKER - Nur bei öffentlicher Buchung */}
+            {isPublic && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>🎨 Buchungsfarbe</Text>
+                <Text style={styles.subscriptionInfo}>
+                  Wähle eine Farbe für diese öffentliche Buchung
+                </Text>
+                
+                <TouchableOpacity 
+                  style={styles.colorPickerButton}
+                  onPress={() => setShowColorPicker(!showColorPicker)}
+                >
+                  <View style={[styles.colorIndicator, { backgroundColor: selectedBookingColor }]} />
+                  <Text style={styles.colorPickerText}>Farbe auswählen</Text>
+                </TouchableOpacity>
+
+                {showColorPicker && (
+                  <View style={styles.colorGrid}>
+                    {bookingColors.map((color) => (
+                      <TouchableOpacity
+                        key={color.value}
+                        style={[
+                          styles.colorOption,
+                          { backgroundColor: color.value },
+                          selectedBookingColor === color.value && styles.selectedColorOption
+                        ]}
+                        onPress={() => {
+                          setSelectedBookingColor(color.value);
+                          setShowColorPicker(false);
+                        }}
+                      >
+                        {selectedBookingColor === color.value && (
+                          <Text style={styles.colorOptionCheck}>✓</Text>
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
 
             {/* ✅ SERIEN-BUCHUNG (ABO) - Nur bei öffentlicher Buchung */}
             {isPublic && (
@@ -661,6 +722,70 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6b7280',
     marginBottom: 4,
+  },
+
+  // ✅ COLOR-PICKER STYLES
+  colorPickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    marginBottom: 12,
+  },
+  colorIndicator: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 12,
+    borderWidth: 2,
+    borderColor: '#fff',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  colorPickerText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  colorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    padding: 8,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+  },
+  colorOption: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    margin: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  selectedColorOption: {
+    borderWidth: 3,
+    borderColor: '#333',
+  },
+  colorOptionCheck: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 1,
   },
 });
 
