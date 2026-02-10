@@ -14,6 +14,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '../context/UserContext';
 import { API_BASE_URL } from '../config/baseUrl';
+import LegalModal from '../components/legal/LegalModal';
+import { exportUserData, deleteUserData, getDeletionPolicy } from '../utils/dataExport';
 
 const SettingsScreen = ({ changeTab }) => {
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,10 @@ const SettingsScreen = ({ changeTab }) => {
   const [editingProfile, setEditingProfile] = useState({});
   const [editingField, setEditingField] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Legal Modal States
+  const [legalModalVisible, setLegalModalVisible] = useState(false);
+  const [currentDocument, setCurrentDocument] = useState(null);
 
   const { currentUser, setUser, getUser, clearUser } = useUser();
 
@@ -324,20 +330,29 @@ const SettingsScreen = ({ changeTab }) => {
     );
   };
 
-  // ✅ DSGVO & DATENSCHUTZ HANDLER
+  // ✅ DSGVO-KONFORME DATENEXPORT-FUNKTION
   const handleDataExport = async () => {
-    try {
-      Alert.alert(
-        'Datenexport',
-        'Möchten Sie alle Ihre gespeicherten Daten als JSON-Datei herunterladen? Dies umfasst Ihr Profil, Buchungen und App-Einstellungen.',
-        [
-          { text: 'Abbrechen', style: 'cancel' },
-          { text: 'Exportieren', onPress: performDataExport }
-        ]
-      );
-    } catch (error) {
-      Alert.alert('Fehler', 'Datenexport konnte nicht gestartet werden.');
-    }
+    Alert.alert(
+      'Datenexport (Art. 20 DSGVO)',
+      'Sie haben das Recht, Ihre personenbezogenen Daten in einem strukturierten, gängigen und maschinenlesbaren Format zu erhalten.\n\nDieser Export enthält alle Ihre in der App gespeicherten Daten.',
+      [
+        { text: 'Abbrechen', style: 'cancel' },
+        { 
+          text: 'Daten exportieren',
+          onPress: async () => {
+            try {
+              const userId = currentUser?.id;
+              if (!userId) {
+                throw new Error('Benutzer-ID nicht verfügbar');
+              }
+              await exportUserData(userId);
+            } catch (error) {
+              console.error('Datenexport Fehler:', error);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const performDataExport = async () => {
@@ -372,84 +387,106 @@ const SettingsScreen = ({ changeTab }) => {
     }
   };
 
+  // ✅ DSGVO-KONFORME KONTOLÖSCHUNG
   const handleDataDeletion = () => {
     Alert.alert(
-      '⚠️ Konto löschen',
-      'ACHTUNG: Diese Aktion kann nicht rückgängig gemacht werden!\n\nAlle Ihre Daten werden permanent gelöscht:\n• Profil und Kontodaten\n• Buchungshistorie\n• App-Einstellungen\n\nSind Sie sicher?',
+      'Konto löschen (Art. 17 DSGVO)',
+      'Möchten Sie Ihr Konto und alle damit verbundenen Daten unwiderruflich löschen?\n\nHinweis: Buchungsdaten unterliegen steuerrechtlichen Aufbewahrungsfristen (10 Jahre) und können nicht sofort gelöscht werden.',
       [
         { text: 'Abbrechen', style: 'cancel' },
-        { text: 'Endgültig löschen', style: 'destructive', onPress: confirmDataDeletion }
-      ]
-    );
-  };
-
-  const confirmDataDeletion = async () => {
-    try {
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-      const userId = userProfile.id || await AsyncStorage.getItem('userId');
-      
-      if (!userId) {
-        Alert.alert('Fehler', 'Benutzer-ID nicht gefunden.');
-        return;
-      }
-
-      // API-Aufruf zum Löschen des Kontos
-      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-User-ID': userId
+        { 
+          text: 'Löschen',
+          style: 'destructive',
+          onPress: () => confirmAccountDeletion()
         }
-      });
-
-      if (response.ok) {
-        // Lokale Daten löschen
-        await clearUser();
-        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-        await AsyncStorage.multiRemove(['userId', 'user_id', 'verein_id', 'currentUserId']);
-        
-        Alert.alert(
-          'Konto gelöscht', 
-          'Ihr Konto und alle Daten wurden erfolgreich gelöscht.',
-          [{ text: 'OK', onPress: () => console.log('Account deleted') }]
-        );
-      } else {
-        throw new Error('Server-Fehler beim Löschen');
-      }
-    } catch (error) {
-      console.error('Account deletion error:', error);
-      Alert.alert('Fehler', 'Konto konnte nicht gelöscht werden. Bitte kontaktieren Sie den Support.');
-    }
-  };
-
-  // ✅ RECHTLICHES & INFORMATION HANDLER
-  const handleDataPolicy = () => {
-    Alert.alert(
-      'Datenschutzerklärung',
-      'Unsere Datenschutzerklärung erklärt, wie wir Ihre Daten sammeln, verwenden und schützen.\n\nWir öffnen die Datenschutzerklärung in Ihrem Browser.',
-      [
-        { text: 'Abbrechen', style: 'cancel' },
-        { text: 'Öffnen', onPress: () => openURL('https://jkb-grounds.de/datenschutz') }
       ]
     );
+  };
+
+  const confirmAccountDeletion = () => {
+    Alert.prompt(
+      'Konto löschen bestätigen',
+      'Geben Sie Ihr Passwort ein, um die Löschung zu bestätigen:',
+      [
+        { text: 'Abbrechen', style: 'cancel' },
+        { 
+          text: 'Endgültig löschen',
+          style: 'destructive',
+          onPress: async (password) => {
+            if (!password) {
+              Alert.alert('Fehler', 'Passwort erforderlich');
+              return;
+            }
+            
+            try {
+              const userId = currentUser?.id;
+              if (!userId) {
+                throw new Error('Benutzer-ID nicht verfügbar');
+              }
+              
+              await deleteUserData(userId, password);
+              
+              // Logout und zur Login-Seite
+              await clearUser();
+              
+              Alert.alert(
+                'Konto gelöscht',
+                'Ihr Konto wurde erfolgreich gelöscht. Sie werden zur Anmeldung weitergeleitet.',
+                [{ text: 'OK' }]
+              );
+              
+            } catch (error) {
+              console.error('Account deletion error:', error);
+              Alert.alert('Fehler', error.message || 'Konto konnte nicht gelöscht werden. Bitte kontaktieren Sie den Support.');
+            }
+          }
+        }
+      ],
+      'secure-text'
+    );
+  };
+
+  // ✅ RECHTLICHE DOKUMENTE HANDLER
+  const handleDataPolicy = () => {
+    setCurrentDocument('dataPolicy');
+    setLegalModalVisible(true);
   };
 
   const handleTermsOfService = () => {
-    Alert.alert(
-      'Allgemeine Geschäftsbedingungen',
-      'Unsere AGBs regeln die Nutzung der JKB Grounds App.\n\nWir öffnen die AGBs in Ihrem Browser.',
-      [
-        { text: 'Abbrechen', style: 'cancel' },
-        { text: 'Öffnen', onPress: () => openURL('https://jkb-grounds.de/agb') }
-      ]
-    );
+    setCurrentDocument('terms');
+    setLegalModalVisible(true);
   };
 
   const handleImprint = () => {
+    setCurrentDocument('imprint');
+    setLegalModalVisible(true);
+  };
+
+  // ✅ LÖSCHUNGSRICHTLINIE ANZEIGEN
+  const handleDeletionPolicy = () => {
+    const policy = getDeletionPolicy();
+    
+    const policyText = `DSGVO-konforme Löschungsrichtlinie:
+
+SOFORTIGE LÖSCHUNG:
+${policy.immediately.map(item => `• ${item}`).join('\n')}
+
+LÖSCHUNG NACH 30 TAGEN:
+${policy.after30Days.map(item => `• ${item}`).join('\n')}
+
+LÖSCHUNG NACH 3 JAHREN:
+${policy.after3Years.map(item => `• ${item}`).join('\n')}
+
+AUFBEWAHRUNG 10 JAHRE (Gesetzlich):
+${policy.after10Years.map(item => `• ${item}`).join('\n')}
+
+DAUERHAFT ANONYMISIERT:
+${policy.neverDeleted.map(item => `• ${item}`).join('\n')}`;
+
     Alert.alert(
-      'Impressum',
-      'JKB Grounds\n\nVerantwortlich:\nMax Mustermann\nMusterstraße 123\n12345 Musterstadt\n\nE-Mail: info@jkb-grounds.de\nTelefon: +49 123 456789',
-      [{ text: 'Schließen' }]
+      'Löschungsrichtlinie',
+      policyText,
+      [{ text: 'Verstanden' }]
     );
   };
 
@@ -515,10 +552,11 @@ const SettingsScreen = ({ changeTab }) => {
         <Text style={styles.headerTitle}>Einstellungen</Text>
       </View>
 
-      {/* ✅ SCROLLABLE CONTENT mit fester Height wie im CRM */}
+      {/* CONTENT - WEB-KOMPATIBLES SCROLLING - Einfache ScrollView wie CRM */}
       <ScrollView 
-        style={styles.content}
+        style={styles.scrollableContent}
         showsVerticalScrollIndicator={false}
+        testID="settings-screen"
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
@@ -663,6 +701,17 @@ const SettingsScreen = ({ changeTab }) => {
             <View style={styles.rowTexts}>
               <Text style={styles.rowTitle}>Datenschutzerklärung</Text>
               <Text style={styles.rowSubtitle}>Wie wir Ihre Daten verwenden</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#666" style={styles.rowArrow} />
+          </View>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.fullWidthRow} onPress={handleDeletionPolicy}>
+          <View style={styles.rowContent}>
+            <Ionicons name="time-outline" size={22} color="#DC143C" style={styles.rowIcon} />
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowTitle}>Löschungsrichtlinie</Text>
+              <Text style={styles.rowSubtitle}>DSGVO-konforme Speicherfristen</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#666" style={styles.rowArrow} />
           </View>
@@ -857,6 +906,13 @@ const SettingsScreen = ({ changeTab }) => {
           </View>
         </View>
       </Modal>
+
+      {/* Legal Modal */}
+      <LegalModal
+        visible={legalModalVisible}
+        onClose={() => setLegalModalVisible(false)}
+        document={currentDocument}
+      />
     </View>
   );
 };
@@ -900,14 +956,14 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     textAlign: 'center',
   },
-  // ✅ VOLLBREITE CONTENT AREA - KEIN PADDING
-  content: {
+  // CONTENT - WEB-KOMPATIBLES SCROLLING - EXAKT wie BookingScreen
+  scrollableContent: {
     flex: 1,
-    padding: 0, // KOMPLETT WEG - volle Breite
-    paddingBottom: 120,
-    height: '70vh',
-    overflow: 'auto',
-    maxHeight: '90vh',
+    padding: 0, // Angepasst für Settings (vollbreite Zeilen)
+    paddingBottom: 50,     // ✅ Mehr Platz für Bottom Tab Bar (wie BookingScreen)
+    height: '70vh',         // ✅ Feste Höhe für Web
+    overflow: 'auto',       // ✅ Eigenes Scrolling
+    maxHeight: '90vh',      // ✅ Max-Height Begrenzung
   },
   section: {
     marginBottom: 0, // KEIN Abstand - volle Breite
