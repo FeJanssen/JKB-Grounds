@@ -3,6 +3,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
+import PublicClubListScreen from './screens/PublicClubListScreen';
+import PublicInfoScreen from './screens/PublicInfoScreen';
 import SimpleTabNavigator from './navigation/SimpleTabNavigator'; // NEU
 
 const Stack = createStackNavigator();
@@ -36,6 +38,22 @@ const AppNavigator = () => {
           options={{
             title: 'Registrieren',
             headerShown: true,
+          }}
+        />
+        <Stack.Screen 
+          name="PublicClubList" 
+          component={PublicClubListScreen}
+          options={{
+            title: 'Vereinsinfos',
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen 
+          name="PublicInfo" 
+          component={PublicInfoScreen}
+          options={{
+            title: 'Vereinsinformationen',
+            headerShown: false,
           }}
         />
         <Stack.Screen 

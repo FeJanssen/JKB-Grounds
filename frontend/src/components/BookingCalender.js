@@ -19,7 +19,11 @@ const BookingCalendar = ({
   canBookPublic = false, 
   vereinId = null, 
   userId = null,
-  selectedDate = new Date() // ✅ selectedDate als Prop empfangen
+  selectedDate = new Date(), // ✅ selectedDate als Prop empfangen
+  isPublicView = false, // ✅ NEU: Public-View Mode
+  onDateChange = null, // ✅ NEU: Date Change Callback für Parent
+  clubName = null, // ✅ NEU: Club Name für Public View
+  refreshTrigger = false // ✅ NEU: Trigger für External Refresh
 }) => {
   // selectedDate wird jetzt von außen gesteuert
   const [viewMode, setViewMode] = useState('day');
@@ -81,6 +85,14 @@ const BookingCalendar = ({
       loadBookingsForDate(selectedDate);
     }
   }, [selectedDate, vereinId]);
+
+  // ✅ PUBLIC VIEW: External Refresh Trigger
+  useEffect(() => {
+    if (refreshTrigger && selectedDate && vereinId) {
+      console.log('🔄 External refresh triggered');
+      loadBookingsForDate(selectedDate);
+    }
+  }, [refreshTrigger]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -241,35 +253,90 @@ const BookingCalendar = ({
   const goToPreviousDay = () => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() - 1);
-    setSelectedDate(newDate);
+    if (onDateChange) {
+      onDateChange(newDate); // ✅ PUBLIC VIEW: Parent benachrichtigen
+    } else {
+      setSelectedDate(newDate); // ✅ NORMALE ANSICHT: Lokal setzen
+    }
   };
 
   const goToNextDay = () => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() + 1);
-    setSelectedDate(newDate);
+    if (onDateChange) {
+      onDateChange(newDate); // ✅ PUBLIC VIEW: Parent benachrichtigen
+    } else {
+      setSelectedDate(newDate); // ✅ NORMALE ANSICHT: Lokal setzen
+    }
   };
 
   const goToToday = () => {
-    setSelectedDate(new Date());
+    const newDate = new Date();
+    if (onDateChange) {
+      onDateChange(newDate); // ✅ PUBLIC VIEW: Parent benachrichtigen
+    } else {
+      setSelectedDate(newDate); // ✅ NORMALE ANSICHT: Lokal setzen
+    }
   };
 
   // ✨ NEUE WOCHENSPRUNG-FUNKTIONEN
   const goToPreviousWeek = () => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() - 7);
-    setSelectedDate(newDate);
+    if (onDateChange) {
+      onDateChange(newDate); // ✅ PUBLIC VIEW: Parent benachrichtigen
+    } else {
+      setSelectedDate(newDate); // ✅ NORMALE ANSICHT: Lokal setzen
+    }
   };
 
   const goToNextWeek = () => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() + 7);
-    setSelectedDate(newDate);
+    if (onDateChange) {
+      onDateChange(newDate); // ✅ PUBLIC VIEW: Parent benachrichtigen
+    } else {
+      setSelectedDate(newDate); // ✅ NORMALE ANSICHT: Lokal setzen
+    }
   };
 
   const handleTimeSlotPress = (court, timeSlot) => {
-    console.log('🔥 handleTimeSlotPress aufgerufen!', { court: court.name, timeSlot });
+    console.log('🔥 handleTimeSlotPress aufgerufen!', { court: court.name, timeSlot, isPublicView });
     
+    // ✅ PUBLIC VIEW: Nur Anzeige, kein Buchen
+    if (isPublicView) {
+      const isBooked = isTimeSlotBooked(court.id, timeSlot);
+      
+      if (isBooked) {
+        const bookingInfo = getBookingInfo(court.id, timeSlot);
+        const notesText = bookingInfo.notes || bookingInfo.notizen || '';
+        
+        // In Public View nur grundlegende Infos zeigen
+        setSelectedBookingNotes({
+          court: court.name,
+          time: `${bookingInfo?.uhrzeit_von || timeSlot} - ${bookingInfo?.uhrzeit_bis || timeSlot}`,
+          date: formatDate(selectedDate),
+          notes: notesText.trim() || 'Belegt',
+          hasNotes: !!notesText.trim(),
+          isPublicView: true
+        });
+        setNotesModalVisible(true);
+      } else {
+        // Freie Slots in Public View
+        setSelectedBookingNotes({
+          court: court.name,
+          time: timeSlot,
+          date: formatDate(selectedDate),
+          notes: 'Frei verfügbar',
+          hasNotes: false,
+          isPublicView: true
+        });
+        setNotesModalVisible(true);
+      }
+      return;
+    }
+    
+    // ✅ NORMALE ANSICHT: Bestehende Logik
     if (!isTimeSlotBookable(court, timeSlot)) {
       console.log('❌ Zeitslot nicht buchbar');
       Alert.alert(
@@ -606,8 +673,12 @@ const BookingCalendar = ({
         <View style={styles.notesModalOverlay}>
           <View style={styles.notesModalContent}>
             <View style={styles.notesModalHeader}>
-              <Text style={styles.notesModalIcon}>📝</Text>
-              <Text style={styles.notesModalTitle}>Buchungsnotizen</Text>
+              <Text style={styles.notesModalIcon}>
+                "Notizen"
+              </Text>
+              <Text style={styles.notesModalTitle}>
+                "Notizen"
+              </Text>
             </View>
             
             {selectedBookingNotes && (

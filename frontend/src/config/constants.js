@@ -45,9 +45,9 @@ export const APP_CONFIG = {
 // API Endpoints - dynamisch basierend auf BASE_URL
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: '/api/auth/login',  // ✅ KORRIGIERT: Korrekte Route verwenden
-    REGISTER: '/api/auth/register',  // ✅ KORRIGIERT: Korrekte Route verwenden  
-    USER: (userId) => `/api/auth/user/${userId}`,  // ✅ KORRIGIERT: Korrekte Route verwenden
+    LOGIN: '/api/auth/auth/login',  // ✅ FIXED: Korrigierter doppelter auth Pfad
+    REGISTER: '/api/auth/auth/register',  // ✅ FIXED: Korrigierter doppelter auth Pfad
+    USER: (userId) => `/api/auth/auth/user/${userId}`,  // ✅ FIXED: Korrigierter doppelter auth Pfad
     ROLE: (userId) => `/api/users/${userId}/role`,
   },
   

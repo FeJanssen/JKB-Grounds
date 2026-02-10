@@ -62,7 +62,7 @@ async getCurrentUserId() {
     try {
       console.log('Register Request:', userData);
       
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const response = await fetch(`${API_BASE_URL}/auth/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

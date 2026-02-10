@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Modal,
   FlatList,
+  Linking,
 } from 'react-native';
 import ApiService from '../services/api';
 import ScrollableContainer from '../components/ScrollableContainer';
@@ -28,6 +29,10 @@ const RegisterScreen = ({ navigation }) => {
   const [showClubDropdown, setShowClubDropdown] = useState(false);
   const [clubSearchText, setClubSearchText] = useState('');
   const [filteredClubs, setFilteredClubs] = useState([]);
+
+  // ✅ DSGVO/AGB COMPLIANCE STATES
+  const [agbAccepted, setAgbAccepted] = useState(false);
+  const [datenschutzAccepted, setDatenschutzAccepted] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -162,6 +167,17 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
+    // ✅ DSGVO/AGB COMPLIANCE VALIDATION
+    if (!agbAccepted) {
+      showError('Sie müssen den Allgemeinen Geschäftsbedingungen zustimmen');
+      return;
+    }
+
+    if (!datenschutzAccepted) {
+      showError('Sie müssen der Datenschutzerklärung zustimmen');
+      return;
+    }
+
     // Löscht Fehlermeldung wenn alles OK ist
     setErrorMessage('');
 
@@ -256,13 +272,60 @@ const RegisterScreen = ({ navigation }) => {
 
 
 
-{/* Hinweistext für Admin-Freigabe */}
-<View style={styles.infoBox}>
+        {/* Hinweistext für Admin-Freigabe */}
+        <View style={styles.infoBox}>
           <Text style={styles.infoIcon}>ℹ️</Text>
           <Text style={styles.infoText}>
             Nach der Registrierung muss Ihr Account von einem Administrator freigeschaltet werden, 
             bevor Sie die App nutzen können. Sie erhalten eine Benachrichtigung, sobald Ihr Account aktiviert wurde.
           </Text>
+        </View>
+
+        {/* ✅ DSGVO/AGB COMPLIANCE SECTION */}
+        <View style={styles.complianceSection}>
+          <Text style={styles.complianceSectionTitle}>Rechtliche Zustimmung</Text>
+          
+          {/* AGB Checkbox */}
+          <TouchableOpacity 
+            style={styles.checkboxContainer} 
+            onPress={() => setAgbAccepted(!agbAccepted)}
+          >
+            <View style={[styles.checkbox, agbAccepted && styles.checkboxChecked]}>
+              {agbAccepted && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+            <Text style={styles.checkboxLabel}>
+              Ich stimme den{' '}
+              <Text 
+                style={styles.linkText} 
+                onPress={() => Linking.openURL('https://ihre-domain.com/agb')}
+              >
+                Allgemeinen Geschäftsbedingungen
+              </Text>
+              {' '}zu *
+            </Text>
+          </TouchableOpacity>
+
+          {/* Datenschutz Checkbox */}
+          <TouchableOpacity 
+            style={styles.checkboxContainer} 
+            onPress={() => setDatenschutzAccepted(!datenschutzAccepted)}
+          >
+            <View style={[styles.checkbox, datenschutzAccepted && styles.checkboxChecked]}>
+              {datenschutzAccepted && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+            <Text style={styles.checkboxLabel}>
+              Ich stimme der{' '}
+              <Text 
+                style={styles.linkText} 
+                onPress={() => Linking.openURL('https://ihre-domain.com/datenschutz')}
+              >
+                Datenschutzerklärung
+              </Text>
+              {' '}zu *
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={styles.requiredNote}>* Pflichtfelder für die Registrierung</Text>
         </View>
 
 
@@ -691,6 +754,68 @@ const styles = StyleSheet.create({
       fontSize: 16,
       fontWeight: 'bold',
       textAlign: 'center',
+    },
+    
+    // ✅ DSGVO/AGB COMPLIANCE STYLES
+    complianceSection: {
+      backgroundColor: '#f8f9fa',
+      borderRadius: 10,
+      padding: 16,
+      marginVertical: 16,
+      borderWidth: 1,
+      borderColor: '#e9ecef',
+    },
+    complianceSectionTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#333',
+      marginBottom: 12,
+      textAlign: 'center',
+    },
+    checkboxContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginVertical: 8,
+      paddingRight: 10,
+    },
+    checkbox: {
+      width: 20,
+      height: 20,
+      borderWidth: 2,
+      borderColor: '#ccc',
+      borderRadius: 3,
+      marginRight: 12,
+      marginTop: 2,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#fff',
+    },
+    checkboxChecked: {
+      backgroundColor: '#DC143C',
+      borderColor: '#DC143C',
+    },
+    checkmark: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    checkboxLabel: {
+      fontSize: 14,
+      color: '#333',
+      lineHeight: 20,
+      flex: 1,
+    },
+    linkText: {
+      color: '#DC143C',
+      textDecorationLine: 'underline',
+      fontWeight: '500',
+    },
+    requiredNote: {
+      fontSize: 12,
+      color: '#666',
+      fontStyle: 'italic',
+      textAlign: 'center',
+      marginTop: 12,
     },
   });
   

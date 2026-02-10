@@ -167,6 +167,15 @@ const LoginScreen = ({ navigation }) => {
             Noch kein Konto? Jetzt registrieren
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.publicInfoButton}
+          onPress={() => navigation.navigate('PublicClubList')}
+        >
+          <Text style={styles.publicInfoText}>
+            Vereinsinfos ansehen
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -234,6 +243,20 @@ const styles = StyleSheet.create({
   linkText: {
     color: '#DC143C',
     fontSize: 14,
+  },
+  publicInfoButton: {
+    alignItems: 'center',
+    marginTop: 15,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#DC143C',
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+  },
+  publicInfoText: {
+    color: '#DC143C',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
