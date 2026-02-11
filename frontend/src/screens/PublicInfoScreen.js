@@ -385,7 +385,9 @@ const PublicInfoScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff', // ✅ Entferne den grauen Hintergrund
+    backgroundColor: '#fff',
+    minHeight: '100vh', // ✅ Für Web: Vollständige Viewport-Höhe
+    overflow: 'hidden', // ✅ Verhindere unerwünschte Scrollbars
   },
   header: {
     backgroundColor: '#fff',
@@ -525,11 +527,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 0, // ✅ Entferne Padding für Full-Width Kalender
-    paddingBottom: 200,     // ✅ Mehr Platz für Bottom Tab Bar
-    height: '70vh',         // ✅ Feste Höhe für Web
-    overflow: 'auto',       // ✅ Eigenes Scrolling
-    maxHeight: '90vh',      // ✅ Max-Height Begrenzung
+    padding: 0,
+    paddingBottom: 0, // ✅ Entferne paddingBottom für Mobile Web
+    backgroundColor: '#fff', // ✅ Expliziter weißer Hintergrund
+    minHeight: '100%', // ✅ Volle Höhe für Mobile Web
   },
   loadingContainer: {
     flex: 1,
@@ -604,8 +605,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   calendarWrapper: {
-    margin: 0, // ✅ Full-width für Kalender
+    margin: 0,
     backgroundColor: '#fff',
+    flex: 1, // ✅ Fülle verfügbaren Platz
+    paddingBottom: 20, // ✅ Kleiner Bottom-Padding statt grauer Box
   },
 });
 
