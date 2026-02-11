@@ -260,12 +260,8 @@ const PublicInfoScreen = ({ navigation, route }) => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backButtonText}>← Zurück</Text>
-          </TouchableOpacity>
+          {/* ✅ Leerer View für Balance, da kein Zurück-Button */}
+          <View style={styles.headerSpacer}></View>
           
           <TouchableOpacity 
             style={styles.shareButton}
@@ -275,7 +271,7 @@ const PublicInfoScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
         
-        <Text style={styles.title}>{clubInfo?.name || clubName}</Text>
+        <Text style={styles.title}>{clubInfo?.name || actualClubName}</Text>
         <Text style={styles.subtitle}>Aktuelle Platzbelegung (nur Ansicht)</Text>
         
         {clubInfo?.beschreibung && (
@@ -296,11 +292,11 @@ const PublicInfoScreen = ({ navigation, route }) => {
           <View style={styles.dateNavigation}>
             {/* WOCHENSPRUNG RÜCKWÄRTS */}
             <TouchableOpacity style={styles.weekNavButton} onPress={goToPreviousWeek}>
-              <Text style={styles.weekNavButtonText}>←←</Text>
+              <Text style={styles.weekNavButtonText}>‹‹</Text>
             </TouchableOpacity>
             {/* TAGESSPRUNG RÜCKWÄRTS */}
             <TouchableOpacity style={styles.navButton} onPress={goToPreviousDay}>
-              <Text style={styles.navButtonText}>←</Text>
+              <Text style={styles.navButtonText}>‹</Text>
             </TouchableOpacity>
             {/* DATUM (HEUTE) */}
             <TouchableOpacity style={styles.dateContainer} onPress={goToToday}>
@@ -308,11 +304,11 @@ const PublicInfoScreen = ({ navigation, route }) => {
             </TouchableOpacity>
             {/* TAGESSPRUNG VORWÄRTS */}
             <TouchableOpacity style={styles.navButton} onPress={goToNextDay}>
-              <Text style={styles.navButtonText}>→</Text>
+              <Text style={styles.navButtonText}>›</Text>
             </TouchableOpacity>
             {/* WOCHENSPRUNG VORWÄRTS */}
             <TouchableOpacity style={styles.weekNavButton} onPress={goToNextWeek}>
-              <Text style={styles.weekNavButtonText}>→→</Text>
+              <Text style={styles.weekNavButtonText}>››</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -367,16 +363,18 @@ const PublicInfoScreen = ({ navigation, route }) => {
               </View>
             )}
 
-            {/* Booking Calendar - PUBLIC MODE */}
-            <BookingCalendar
-              courts={visibleCourts}
-              selectedDate={selectedDate}
-              onDateChange={setSelectedDate}
-              vereinId={clubId} // ✅ WICHTIG: Club ID als vereinId weitergeben
-              isPublicView={true} // ⭐ WICHTIG: Public-Mode Flag
-              clubName={clubInfo?.name || clubName}
-              refreshTrigger={refreshing}
-            />
+            {/* Booking Calendar - PUBLIC MODE - FULL WIDTH */}
+            <View style={styles.calendarWrapper}>
+              <BookingCalendar
+                courts={visibleCourts}
+                selectedDate={selectedDate}
+                onDateChange={setSelectedDate}
+                vereinId={actualClubId} // ✅ WICHTIG: Club ID als vereinId weitergeben
+                isPublicView={true} // ⭐ WICHTIG: Public-Mode Flag
+                clubName={clubInfo?.name || actualClubName}
+                refreshTrigger={refreshing}
+              />
+            </View>
           </>
         )}
       </ScrollView>
@@ -387,19 +385,22 @@ const PublicInfoScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff', // ✅ Entferne den grauen Hintergrund
   },
   header: {
     backgroundColor: '#fff',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#f0f0f0', // ✅ Hellere Border
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 15,
+  },
+  headerSpacer: {
+    flex: 1, // ✅ Nimmt den Platz des entfernten Zurück-Buttons ein
   },
   backButton: {
     padding: 5,
@@ -411,12 +412,12 @@ const styles = StyleSheet.create({
   },
   shareButton: {
     padding: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#DC143C', // ✅ Verwende Hauptfarbe statt grau
     borderRadius: 8,
   },
   shareButtonText: {
     fontSize: 14,
-    color: '#DC143C',
+    color: '#fff', // ✅ Weißer Text auf rotem Hintergrund
     fontWeight: '600',
   },
   title: {
@@ -455,7 +456,7 @@ const styles = StyleSheet.create({
   navigationHeader: {
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#f0f0f0', // ✅ Hellere Border
     paddingVertical: 10,
     paddingHorizontal: 15,
   },
@@ -471,50 +472,60 @@ const styles = StyleSheet.create({
   dateNavigation: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center', // ✅ Zentriere die gesamte Navigation
+    paddingHorizontal: 20, // ✅ Etwas Padding für bessere Zentrierung
   },
   navButton: {
-    backgroundColor: '#DC143C',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-    marginHorizontal: 5,
+    backgroundColor: 'transparent',
+    marginHorizontal: 2, // ✅ Näher zum Datum
+    justifyContent: 'center',
+    alignItems: 'center',
+    // ✅ Entferne width, height, borderRadius - nur noch Text
   },
   navButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#DC143C',
+    fontSize: 24,
     fontWeight: '600',
+    textAlign: 'center',
   },
   weekNavButton: {
-    backgroundColor: '#f0f0f0',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 6,
-    marginHorizontal: 3,
+    backgroundColor: 'transparent',
+    marginHorizontal: 8, // ✅ Etwas mehr Abstand für Week-Buttons außen
+    justifyContent: 'center',
+    alignItems: 'center',
+    // ✅ Entferne width, height, borderRadius - nur noch Text
   },
   weekNavButtonText: {
-    color: '#666',
-    fontSize: 14,
+    color: '#2c5530',
+    fontSize: 24,
     fontWeight: '600',
+    textAlign: 'center',
   },
   dateContainer: {
     backgroundColor: '#f8f8f8',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginHorizontal: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginHorizontal: 5, // ✅ Reduziert von 10 auf 5 - kompakter
+    borderWidth: 2,
+    borderColor: '#DC143C',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    minHeight: 50,
+    justifyContent: 'center',
   },
   dateText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 14, // ✅ Angepasste Textgröße
+    fontWeight: '700',
+    color: '#DC143C',
     textAlign: 'center',
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: 0, // ✅ Entferne Padding für Full-Width Kalender
     paddingBottom: 200,     // ✅ Mehr Platz für Bottom Tab Bar
     height: '70vh',         // ✅ Feste Höhe für Web
     overflow: 'auto',       // ✅ Eigenes Scrolling
@@ -558,10 +569,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     padding: 15,
-    marginHorizontal: 15,
+    marginHorizontal: 0, // ✅ Entferne margin für full-width
     marginTop: 15,
     marginBottom: 10,
-    borderRadius: 10,
+    borderRadius: 0, // ✅ Entferne border-radius für cleanes Design
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -591,6 +602,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     fontWeight: '500',
+  },
+  calendarWrapper: {
+    margin: 0, // ✅ Full-width für Kalender
+    backgroundColor: '#fff',
   },
 });
 
