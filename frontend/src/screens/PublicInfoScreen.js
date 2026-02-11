@@ -14,7 +14,15 @@ import {
 import BookingCalendar from '../components/BookingCalender';
 
 const PublicInfoScreen = ({ navigation, route }) => {
-  const { clubId, clubName, publicUrl } = route.params;
+  // URL-Parameter handling: /jkbtestverein oder navigation params
+  const clubSlug = route.params?.clubSlug;
+  const clubId = route.params?.clubId;
+  const clubName = route.params?.clubName;
+  const publicUrl = route.params?.publicUrl;
+  
+  // Club-Info laden basierend auf Slug oder ID
+  const [actualClubId, setActualClubId] = useState(clubId);
+  const [actualClubName, setActualClubName] = useState(clubName);
   
   const [courts, setCourts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,11 +38,59 @@ const PublicInfoScreen = ({ navigation, route }) => {
 
   useEffect(() => {
     initializePublicView();
-  }, [clubId]);
+  }, [actualClubId]);
+
+  // Neue Funktion: Club-Info per Slug laden
+  const loadClubBySlug = async (slug) => {
+    try {
+      console.log(`🔍 Suche Club mit Slug: ${slug}`);
+      
+      // Lade alle Clubs und finde den passenden Slug
+      const response = await fetch('https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws/api/clubs');
+      const data = await response.json();
+      const clubs = data.clubs || data || [];
+      
+      // Finde Club basierend auf Slug (vereinfacht: slug = name in lowercase)
+      const club = clubs.find(c => 
+        c.name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '') === slug ||
+        c.id === slug
+      );
+      
+      if (club) {
+        setActualClubId(club.id);
+        setActualClubName(club.name);
+        console.log(`✅ Club gefunden: ${club.name} (${club.id})`);
+        return club;
+      } else {
+        throw new Error(`Club mit Slug "${slug}" nicht gefunden`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Fehler beim Laden des Clubs per Slug:', error);
+      Alert.alert(
+        'Verein nicht gefunden',
+        `Der Verein "${slug}" konnte nicht gefunden werden.`,
+        [{ text: 'OK', onPress: () => navigation.navigate('PublicClubList') }]
+      );
+      throw error;
+    }
+  };
 
   const initializePublicView = async () => {
     try {
-      console.log(`🌐 PUBLIC: Initialisiere öffentliche Ansicht für Verein ${clubId}`);
+      setLoading(true);
+      
+      // Falls wir einen Slug haben, erst Club-Info laden
+      if (clubSlug && !actualClubId) {
+        await loadClubBySlug(clubSlug);
+        return; // useEffect wird erneut ausgeführt mit actualClubId
+      }
+      
+      if (!actualClubId) {
+        throw new Error('Keine Club-ID verfügbar');
+      }
+      
+      console.log(`🌐 PUBLIC: Initialisiere öffentliche Ansicht für Verein ${actualClubId}`);
       
       // Parallel beide Datenquellen laden
       await Promise.all([
@@ -54,15 +110,17 @@ const PublicInfoScreen = ({ navigation, route }) => {
           { text: 'Zurück', onPress: () => navigation.goBack() }
         ]
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   const loadClubInfo = async () => {
     try {
-      console.log(`📋 PUBLIC: Lade Vereinsinfos für ${clubId}`);
+      console.log(`📋 PUBLIC: Lade Vereinsinfos für ${actualClubId}`);
       
       // Falls du einen separaten Endpoint für Vereinsdetails hast
-      const url = `https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws/api/clubs/${clubId}`;
+      const url = `https://crfdc7s6frt3rvczcg7l7xmddq0gjnxr.lambda-url.eu-central-1.on.aws/api/clubs/${actualClubId}`;
       const response = await fetch(url);
       
       if (response.ok) {

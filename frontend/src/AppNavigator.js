@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { Platform } from 'react-native';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import PublicClubListScreen from './screens/PublicClubListScreen';
@@ -9,9 +10,34 @@ import SimpleTabNavigator from './navigation/SimpleTabNavigator'; // NEU
 
 const Stack = createStackNavigator();
 
+// Linking configuration für Web-URLs
+const linking = {
+  prefixes: ['https://main.d1wyodl7lpyx0o.amplifyapp.com/', 'http://localhost:19006/'],
+  config: {
+    screens: {
+      // Öffentliche Vereinsseiten: /vereinsname
+      PublicInfo: {
+        path: '/:clubSlug',
+        parse: {
+          clubSlug: (clubSlug) => clubSlug,
+        },
+      },
+      // Alternative: /club/vereinsname  
+      PublicClubList: 'clubs',
+      Login: 'login',
+      Register: 'register',
+      MainTabs: {
+        screens: {
+          // Deine bestehenden Tab-Screens hier
+        },
+      },
+    },
+  },
+};
+
 const AppNavigator = () => {
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator
         initialRouteName="Login"
         screenOptions={{
