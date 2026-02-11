@@ -39,6 +39,17 @@ class BookingRequest(BaseModel):
     notes: Optional[str] = ""
     color: Optional[str] = None  # ✅ NEU: Hex-Farbe für öffentliche Buchungen
 
+class SeriesBookingRequest(BaseModel):
+    """Enterprise Series Booking Request Model - Serienbuchungen"""
+    platz_id: str
+    start_date: str  # YYYY-MM-DD Format - Startdatum der Serie
+    time: str  # HH:MM Format
+    duration: int  # Minuten (Standard: 60)
+    type: str  # 'private' oder 'public'
+    weeks: int  # Anzahl Wochen
+    notes: Optional[str] = ""
+    series_name: Optional[str] = ""  # Name für die Serie
+
 class BookingResponse(BaseModel):
     """Enterprise Booking Response Model"""
     id: str
@@ -350,6 +361,76 @@ async def debug_headers(request: Request):
     except Exception as e:
         print(f"❌ DEBUG ERROR: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/series")
+async def create_series_booking(
+    request: SeriesBookingRequest, 
+    http_request: Request,
+    user_id: str = Header(None, alias="X-User-ID")
+):
+    """🔄 ENTERPRISE SERIES BOOKING: Serienbuchungen erstellen"""
+    try:
+        print(f"🔄 SERIES BOOKING START: User {user_id}")
+        print(f"📊 SERIES DATA: {request.dict()}")
+        
+        if not user_id:
+            raise HTTPException(status_code=401, detail="X-User-ID Header erforderlich")
+        
+        # Import datetime für Datumsberechnung
+        from datetime import datetime, timedelta
+        
+        created_bookings = []
+        start_date = datetime.strptime(request.start_date, "%Y-%m-%d")
+        
+        # Erstelle Buchungen für jede Woche
+        for week in range(request.weeks):
+            booking_date = start_date + timedelta(weeks=week)
+            booking_date_str = booking_date.strftime("%Y-%m-%d")
+            
+            # Einzelbuchung erstellen
+            booking_data = {
+                "platz_id": request.platz_id,  # ✅ KORRIGIERT: platz_id statt court_id
+                "date": booking_date_str,
+                "time": request.time,
+                "duration": request.duration,
+                "type": request.type,
+                "notes": f"{request.series_name} (Woche {week + 1}/{request.weeks})" if request.series_name else f"Serie - Woche {week + 1}/{request.weeks}",
+                "user_id": user_id
+            }
+            
+            try:
+                result = await booking_service.create_booking(booking_data)
+                created_bookings.append({
+                    "week": week + 1,
+                    "date": booking_date_str,
+                    "booking": result.get("booking")
+                })
+                print(f"✅ SERIES: Woche {week + 1} - {booking_date_str} erstellt")
+            except Exception as e:
+                print(f"⚠️ SERIES: Fehler bei Woche {week + 1} - {booking_date_str}: {e}")
+                # Weiter mit nächster Woche, auch bei Fehlern
+        
+        return {
+            "status": "success",  # ✅ KORRIGIERT: status = "success" für Frontend-Kompatibilität
+            "message": f"Serien-Buchung abgeschlossen: {len(created_bookings)} von {request.weeks} Buchungen erstellt",
+            "series_info": {  # ✅ Frontend erwartet "series_info"
+                "name": request.series_name,
+                "weeks": request.weeks,
+                "start_date": request.start_date,
+                "court_id": request.platz_id
+            },
+            "summary": {  # ✅ Frontend erwartet "summary"
+                "successful": len(created_bookings),
+                "failed": request.weeks - len(created_bookings),
+                "total": request.weeks
+            },
+            "created_bookings": created_bookings,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        print(f"❌ SERIES BOOKING ERROR: {e}")
+        raise HTTPException(status_code=500, detail=f"Serienbuchung fehlgeschlagen: {str(e)}")
 
 @router.get("/test-create")
 async def test_create_booking():

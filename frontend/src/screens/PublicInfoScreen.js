@@ -386,8 +386,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    minHeight: '100vh', // ✅ Für Web: Vollständige Viewport-Höhe
-    overflow: 'hidden', // ✅ Verhindere unerwünschte Scrollbars
+    // ✅ Entferne minHeight und overflow - das macht ScrollView
   },
   header: {
     backgroundColor: '#fff',
@@ -528,9 +527,11 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 0,
-    paddingBottom: 0, // ✅ Entferne paddingBottom für Mobile Web
-    backgroundColor: '#fff', // ✅ Expliziter weißer Hintergrund
-    minHeight: '100%', // ✅ Volle Höhe für Mobile Web
+    paddingBottom: 200, // ✅ Wie im BookingScreen - Platz für Bottom Navigation
+    backgroundColor: '#fff',
+    height: '70vh', // ✅ Feste Höhe für Web
+    overflow: 'auto', // ✅ Eigenes Scrolling
+    maxHeight: '90vh', // ✅ Max-Height Begrenzung
   },
   loadingContainer: {
     flex: 1,
