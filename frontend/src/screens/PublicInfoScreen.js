@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 0,
-    paddingBottom: 200, // ✅ Wie im BookingScreen - Platz für Bottom Navigation
+    paddingBottom: 0, // ✅ Wie im BookingScreen - Platz für Bottom Navigation
     backgroundColor: '#fff',
     height: '70vh', // ✅ Feste Höhe für Web
     overflow: 'auto', // ✅ Eigenes Scrolling
