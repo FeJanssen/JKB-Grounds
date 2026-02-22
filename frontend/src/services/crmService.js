@@ -35,12 +35,12 @@ const getHeaders = async () => {
         }
       }
       
-      // Suche nach Token in verschiedenen Keys
-      token = localStorage.getItem('token') || 
+      // Suche nach Token in verschiedenen Keys (access_token hat Priorität)
+      token = localStorage.getItem('access_token') ||
+              localStorage.getItem('token') || 
               localStorage.getItem('authToken') ||
               localStorage.getItem('accessToken') ||
               localStorage.getItem('jwt') ||
-              localStorage.getItem('access_token') ||
               localStorage.getItem('bearerToken');
       
       console.log('🌐 Web Token gefunden:', token ? 'JA' : 'NEIN');
@@ -50,12 +50,12 @@ const getHeaders = async () => {
       console.log('🔍 CRM Service - Mobile: Lade Token aus AsyncStorage...');
       
       try {
-        // Suche nach Token in verschiedenen Keys
-        token = await AsyncStorage.getItem('token') || 
+        // Suche nach Token in verschiedenen Keys (access_token hat Priorität)
+        token = await AsyncStorage.getItem('access_token') ||
+                await AsyncStorage.getItem('token') || 
                 await AsyncStorage.getItem('authToken') ||
                 await AsyncStorage.getItem('accessToken') ||
                 await AsyncStorage.getItem('jwt') ||
-                await AsyncStorage.getItem('access_token') ||
                 await AsyncStorage.getItem('bearerToken');
         
         console.log('📱 Mobile Token gefunden:', token ? 'JA' : 'NEIN');
