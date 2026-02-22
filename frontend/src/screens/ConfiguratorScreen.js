@@ -40,8 +40,11 @@ const ConfiguratorScreen = () => {
     aktiv_bis: '',
     buchbar_von: '07:00',
     buchbar_bis: '22:00',
-    preise: {}
+    preise: {},
+    abrechnungsmodelle: {}, // rolle_id -> abrechnungsmodell
+    buchungszeiten: [30, 60, 90, 120] // Konfigurierbare Buchungszeiten in Minuten
   });
+  const [priceTexts, setPriceTexts] = useState({}); // Separate Text States für Preis-Eingaben
   
   const VERFUEGBARE_RECHTE = [
     { 
@@ -337,9 +340,34 @@ const ConfiguratorScreen = () => {
     );
   }
 
-  const openCourtModal = (court = null) => {
+  const openCourtModal = async (court = null) => {
     if (court) {
       setEditingCourt(court);
+      
+      // Lade aktuelle Preise vom Backend
+      let preise = {};
+      let abrechnungsmodelle = {};
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/courts/${court.id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-ID': currentUserId
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.court) {
+            preise = data.court.preise || {};
+            abrechnungsmodelle = data.court.abrechnungsmodelle || {};
+          }
+        }
+      } catch (error) {
+        console.log('Fehler beim Laden der Preise:', error);
+      }
+      
       setCourtForm({
         name: court.name,
         platztyp: court.platztyp || '',
@@ -347,8 +375,17 @@ const ConfiguratorScreen = () => {
         aktiv_bis: court.aktiv_bis || '',
         buchbar_von: court.buchbar_von || '07:00',
         buchbar_bis: court.buchbar_bis || '22:00',
-        preise: {}
+        preise: preise,
+        abrechnungsmodelle: abrechnungsmodelle,
+        buchungszeiten: court.buchungszeiten || [30, 60, 90, 120] // Fallback zu Standard-Zeiten
       });
+      
+      // Initialisiere priceTexts mit existierenden Preisen (Punkt zu Komma)
+      const initialPriceTexts = {};
+      Object.keys(preise).forEach(roleId => {
+        initialPriceTexts[roleId] = preise[roleId].toString().replace('.', ',');
+      });
+      setPriceTexts(initialPriceTexts);
     } else {
       setEditingCourt(null);
       setCourtForm({
@@ -358,8 +395,11 @@ const ConfiguratorScreen = () => {
         aktiv_bis: '',
         buchbar_von: '07:00',
         buchbar_bis: '22:00',
-        preise: {}
+        preise: {},
+        abrechnungsmodelle: {},
+        buchungszeiten: [30, 60, 90, 120] // Standard-Zeiten beim Erstellen
       });
+      setPriceTexts({}); // Reset price texts
     }
     setModalVisible(true);
   };
@@ -376,20 +416,49 @@ const ConfiguratorScreen = () => {
         return;
       }
       
+      // Konvertiere buchungszeiten Array zu boolean Feldern
       const courtData = {
         ...courtForm,
         verein_id: currentVereinId
       };
+      
+      // Entferne buchungszeiten Array
+      delete courtData.buchungszeiten;
+      
+      // Konvertiere zu boolean Feldern
+      const buchungszeiten = courtForm.buchungszeiten || [30, 60, 90, 120];
+      courtData.booking_15min = buchungszeiten.includes(15);
+      courtData.booking_30min = buchungszeiten.includes(30);
+      courtData.booking_45min = buchungszeiten.includes(45);
+      courtData.booking_60min = buchungszeiten.includes(60);
+      courtData.booking_75min = buchungszeiten.includes(75);
+      courtData.booking_90min = buchungszeiten.includes(90);
+      courtData.booking_105min = buchungszeiten.includes(105);
+      courtData.booking_120min = buchungszeiten.includes(120);
+      courtData.booking_135min = buchungszeiten.includes(135);
+      courtData.booking_150min = buchungszeiten.includes(150);
+      courtData.booking_165min = buchungszeiten.includes(165);
+      courtData.booking_180min = buchungszeiten.includes(180);
+      courtData.booking_195min = buchungszeiten.includes(195);
+      courtData.booking_210min = buchungszeiten.includes(210);
+      courtData.booking_225min = buchungszeiten.includes(225);
+      courtData.booking_240min = buchungszeiten.includes(240);
+      courtData.booking_300min = buchungszeiten.includes(300);
+      courtData.booking_360min = buchungszeiten.includes(360);
+      courtData.booking_480min = buchungszeiten.includes(480);
 
       const url = editingCourt
         ? `${API_BASE_URL}/api/courts/${editingCourt.id}`
-        : `${API_BASE_URL}/api/courts`;      const method = editingCourt ? 'PUT' : 'POST';
+        : `${API_BASE_URL}/api/courts`;
+      
+      const method = editingCourt ? 'PUT' : 'POST';
 
       console.log('💾 Speichere Platz:', {
         method,
         url,
         courtData,
-        userId: currentUserId
+        userId: currentUserId,
+        buchungszeiten: courtForm.buchungszeiten
       });
 
       const response = await fetch(url, {
@@ -795,21 +864,135 @@ const ConfiguratorScreen = () => {
 
             <Text style={styles.sectionTitle}>Preise pro Rolle</Text>
             {Array.isArray(roles) && roles.map((role) => (
-              <View key={role.id} style={styles.priceRow}>
-                <Text style={styles.roleName}>{role.name}:</Text>
-                <TextInput
-                  style={styles.priceInput}
-                  value={courtForm.preise[role.id]?.toString() || ''}
-                  onChangeText={(text) => setCourtForm({
-                    ...courtForm,
-                    preise: {...courtForm.preise, [role.id]: parseFloat(text) || 0}
-                  })}
-                  placeholder="0.00"
-                  keyboardType="numeric"
-                />
-                <Text style={styles.currency}>€</Text>
+              <View key={role.id} style={styles.priceRoleCard}>
+                <Text style={styles.roleCardTitle}>{role.name}</Text>
+                
+                <View style={styles.priceInputRow}>
+                  <Text style={styles.priceLabel}>Preis:</Text>
+                  <TextInput
+                    style={styles.priceInput}
+                    value={priceTexts[role.id] || (courtForm.preise[role.id]?.toString().replace('.', ',') || '')}
+                    onChangeText={(text) => {
+                      // Update Text State
+                      setPriceTexts({...priceTexts, [role.id]: text});
+                      
+                      // Konvertiere für interne Speicherung
+                      const cleanText = text.replace(/[^0-9,\.]/g, '');
+                      const normalizedText = cleanText.replace(',', '.');
+                      const numericValue = parseFloat(normalizedText);
+                      
+                      setCourtForm({
+                        ...courtForm,
+                        preise: {...courtForm.preise, [role.id]: isNaN(numericValue) ? 0 : numericValue}
+                      });
+                    }}
+                    onBlur={() => {
+                      // Bei Focus-Verlust: Text normalisieren
+                      const currentPrice = courtForm.preise[role.id];
+                      if (currentPrice) {
+                        setPriceTexts({...priceTexts, [role.id]: currentPrice.toString().replace('.', ',')});
+                      }
+                    }}
+                    placeholder="0,00"
+                    keyboardType="decimal-pad"
+                  />
+                  <Text style={styles.currency}>€</Text>
+                </View>
+
+                <Text style={styles.abrechnungsLabel}>Abrechnungsmodell:</Text>
+                <View style={styles.abrechnungsPicker}>
+                  <TouchableOpacity
+                    style={[styles.pickerButton, 
+                      (courtForm.abrechnungsmodelle[role.id] || 'stunde') === 'stunde' && styles.pickerButtonActive]}
+                    onPress={() => setCourtForm({
+                      ...courtForm, 
+                      abrechnungsmodelle: {...courtForm.abrechnungsmodelle, [role.id]: 'stunde'}
+                    })}
+                  >
+                    <Text style={[styles.pickerButtonText, 
+                      (courtForm.abrechnungsmodelle[role.id] || 'stunde') === 'stunde' && styles.pickerButtonTextActive]}>
+                      Stunde
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.pickerButton, 
+                      courtForm.abrechnungsmodelle[role.id] === 'tag' && styles.pickerButtonActive]}
+                    onPress={() => setCourtForm({
+                      ...courtForm, 
+                      abrechnungsmodelle: {...courtForm.abrechnungsmodelle, [role.id]: 'tag'}
+                    })}
+                  >
+                    <Text style={[styles.pickerButtonText, 
+                      courtForm.abrechnungsmodelle[role.id] === 'tag' && styles.pickerButtonTextActive]}>
+                      Tag
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.pickerButton, 
+                      courtForm.abrechnungsmodelle[role.id] === 'woche' && styles.pickerButtonActive]}
+                    onPress={() => setCourtForm({
+                      ...courtForm, 
+                      abrechnungsmodelle: {...courtForm.abrechnungsmodelle, [role.id]: 'woche'}
+                    })}
+                  >
+                    <Text style={[styles.pickerButtonText, 
+                      courtForm.abrechnungsmodelle[role.id] === 'woche' && styles.pickerButtonTextActive]}>
+                      Woche
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.pickerButton, 
+                      courtForm.abrechnungsmodelle[role.id] === 'monat' && styles.pickerButtonActive]}
+                    onPress={() => setCourtForm({
+                      ...courtForm, 
+                      abrechnungsmodelle: {...courtForm.abrechnungsmodelle, [role.id]: 'monat'}
+                    })}
+                  >
+                    <Text style={[styles.pickerButtonText, 
+                      courtForm.abrechnungsmodelle[role.id] === 'monat' && styles.pickerButtonTextActive]}>
+                      Monat
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
+
+            <Text style={styles.sectionTitle}>Buchungszeiten</Text>
+            <Text style={styles.sectionSubtitle}>Verfügbare Buchungsdauern für diesen Platz</Text>
+            
+            <View style={styles.buchungszeitenContainer}>
+              {[15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 210, 240, 270, 300, 360, 420, 480].map((minuten) => (
+                <TouchableOpacity
+                  key={minuten}
+                  style={[styles.buchungszeitButton, 
+                    courtForm.buchungszeiten.includes(minuten) && styles.buchungszeitButtonActive]}
+                  onPress={() => {
+                    const currentZeiten = courtForm.buchungszeiten || [];
+                    const newZeiten = currentZeiten.includes(minuten)
+                      ? currentZeiten.filter(z => z !== minuten)
+                      : [...currentZeiten, minuten].sort((a, b) => a - b);
+                    setCourtForm({
+                      ...courtForm,
+                      buchungszeiten: newZeiten
+                    });
+                  }}
+                >
+                  <Text style={[styles.buchungszeitButtonText, 
+                    courtForm.buchungszeiten.includes(minuten) && styles.buchungszeitButtonTextActive]}>
+                    {minuten >= 60 ? `${Math.floor(minuten/60)}h${minuten%60 ? ` ${minuten%60}m` : ''}` : `${minuten}m`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            <View style={styles.selectedZeitenInfo}>
+              <Text style={styles.selectedZeitenLabel}>Ausgewählt:</Text>
+              <Text style={styles.selectedZeitenText}>
+                {courtForm.buchungszeiten?.length > 0 
+                  ? courtForm.buchungszeiten.map(z => z >= 60 ? `${Math.floor(z/60)}h${z%60 ? ` ${z%60}m` : ''}` : `${z}m`).join(', ')
+                  : 'Keine Buchungszeiten ausgewählt'}
+              </Text>
+            </View>
           </ScrollView>
 
           <View style={styles.modalButtons}>
@@ -1245,6 +1428,144 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
     fontWeight: '600',
+  },
+  // 🆕 Abrechnungsmodell Picker Styles
+  pickerContainer: {
+    marginBottom: 20,
+  },
+  pickerWrapper: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  pickerButton: {
+    flex: 1,
+    minWidth: '22%',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pickerButtonActive: {
+    backgroundColor: '#DC143C',
+    borderColor: '#DC143C',
+  },
+  pickerButtonText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  pickerButtonTextActive: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  // 🆕 Neue Styles für Preis-Rolle-Cards
+  priceRoleCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  roleCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#DC143C',
+    marginBottom: 12,
+  },
+  priceInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: '#333',
+    width: 60,
+  },
+  abrechnungsLabel: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  abrechnungsPicker: {
+    flexDirection: 'row',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  // 🎨 Update pickerButton for better fit in role cards
+  pickerButton: {
+    flex: 1,
+    minWidth: 60,
+    maxWidth: 80,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // 🕒 Buchungszeiten Styles
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
+  buchungszeitenContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  buchungszeitButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  buchungszeitButtonActive: {
+    backgroundColor: '#DC143C',
+    borderColor: '#DC143C',
+  },
+  buchungszeitButtonText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  buchungszeitButtonTextActive: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  selectedZeitenInfo: {
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#DC143C',
+    marginBottom: 20,
+  },
+  selectedZeitenLabel: {
+    fontSize: 14,
+    color: '#DC143C',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  selectedZeitenText: {
+    fontSize: 14,
+    color: '#333',
   },
 });
 

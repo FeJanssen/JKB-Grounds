@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -48,6 +48,16 @@ const BookingModal = ({
   // ✅ SERIEN-BUCHUNG STATES
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringWeeks, setRecurringWeeks] = useState(8); // Default 8 Wochen
+
+  // ✅ Setze Standarddauer basierend auf verfügbaren Buchungszeiten
+  useEffect(() => {
+    if (court?.buchungszeiten && court.buchungszeiten.length > 0) {
+      // Wenn 60 Minuten verfügbar ist, nutze das, ansonsten die erste verfügbare Zeit
+      const availableTimes = court.buchungszeiten;
+      const defaultTime = availableTimes.includes(60) ? '60' : availableTimes[0].toString();
+      setDuration(defaultTime);
+    }
+  }, [court?.buchungszeiten]);
 
   const calculateEndTime = (startTime, durationMinutes) => {
     const [hours, minutes] = startTime.split(':').map(Number);
@@ -210,18 +220,18 @@ const BookingModal = ({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Spieldauer</Text>
               <View style={styles.durationSelector}>
-                {['30', '60', '90', '120'].map((mins) => (
+                {(court?.buchungszeiten || [30, 60, 90, 120]).map((mins) => (
                   <TouchableOpacity
                     key={mins}
                     style={[
                       styles.durationButton,
-                      duration === mins && styles.activeDurationButton
+                      duration === mins.toString() && styles.activeDurationButton
                     ]}
-                    onPress={() => setDuration(mins)}
+                    onPress={() => setDuration(mins.toString())}
                   >
                     <Text style={[
                       styles.durationButtonText,
-                      duration === mins && styles.activeDurationButtonText
+                      duration === mins.toString() && styles.activeDurationButtonText
                     ]}>
                       {mins} Min.
                     </Text>

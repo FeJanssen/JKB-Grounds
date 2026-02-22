@@ -121,12 +121,15 @@ const BookingCalendar = ({
     
     console.log(`Generiere Zeitslots von ${earliestHour}:00 bis ${latestHour}:00`);
     
+    // Verwende 30-Minuten-Basis für Zeitslots (unabhängig von Buchungszeiten)
     for (let hour = earliestHour; hour <= latestHour; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         slots.push(timeString);
       }
     }
+    
+    console.log(`✅ ${slots.length} Zeitslots generiert`);
     setTimeSlots(slots);
   };
 
