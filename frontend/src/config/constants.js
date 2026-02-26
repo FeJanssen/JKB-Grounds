@@ -45,15 +45,14 @@ export const APP_CONFIG = {
 // API Endpoints - dynamisch basierend auf BASE_URL
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: '/api/auth/auth/login',  // ✅ FIXED: Korrigierter doppelter auth Pfad
-    REGISTER: '/api/auth/auth/register',  // ✅ FIXED: Korrigierter doppelter auth Pfad
-    USER: (userId) => `/api/auth/auth/user/${userId}`,  // ✅ FIXED: Korrigierter doppelter auth Pfad
+    LOGIN: '/api/auth/auth/login',  // ← KORRIGIERT: Doppelte auth für Lambda-Kompatibilität
+    REGISTER: '/api/auth/register',
+    USER: (userId) => `/api/auth/user/${userId}`,
     ROLE: (userId) => `/api/users/${userId}/role`,
   },
   
   BOOKINGS: {
     CREATE: '/api/bookings/create',
-    SERIES: '/api/bookings/series',  // ✅ NEU: Serien-Buchungs-Endpoint
     BY_DATE: (date, vereinId) => `/api/bookings/date/${date}?verein_id=${vereinId}`,
     DELETE: (bookingId) => `/api/bookings/${bookingId}`,
   },
