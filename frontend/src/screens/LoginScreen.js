@@ -123,30 +123,61 @@ const LoginScreen = ({ navigation }) => {
     navigation.navigate('Register');
   };
 
+  const handleForgotPassword = () => {
+    Alert.alert(
+      'Passwort vergessen',
+      'Diese Funktion wird in einer zukünftigen Version verfügbar sein.',
+      [{ text: 'OK' }]
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>SV Hohenfurch</Text>
-      <Text style={styles.subtitle}>Tennis Buchung</Text>
+      {/* Header mit Gradient-Effekt */}
+      <View style={styles.header}>
+        <Text style={styles.title}>SV Hohenfurch</Text>
+        <Text style={styles.subtitle}>Tennis Buchung</Text>
+      </View>
 
+      {/* Login Form */}
       <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
+        <Text style={styles.welcomeText}>Willkommen zurück!</Text>
+        
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="E-Mail Adresse"
+            placeholderTextColor="#999"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Passwort"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Passwort"
+            placeholderTextColor="#999"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+        </View>
 
+        {/* Passwort vergessen Link */}
+        <TouchableOpacity 
+          style={styles.forgotPasswordButton}
+          onPress={handleForgotPassword}
+        >
+          <Text style={styles.forgotPasswordText}>
+            Passwort vergessen?
+          </Text>
+        </TouchableOpacity>
+
+        {/* Login Button */}
         <TouchableOpacity 
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleLogin}
@@ -159,15 +190,24 @@ const LoginScreen = ({ navigation }) => {
           )}
         </TouchableOpacity>
 
+        {/* Divider */}
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>oder</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Registrierung */}
         <TouchableOpacity 
-          style={styles.linkButton}
+          style={styles.secondaryButton}
           onPress={goToRegister}
         >
-          <Text style={styles.linkText}>
-            Noch kein Konto? Jetzt registrieren
+          <Text style={styles.secondaryButtonText}>
+            Neues Konto erstellen
           </Text>
         </TouchableOpacity>
 
+        {/* Vereinsinfos */}
         <TouchableOpacity 
           style={styles.publicInfoButton}
           onPress={() => navigation.navigate('PublicClubList')}
@@ -184,79 +224,141 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
+    flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    alignItems: 'center',
+    backgroundColor: '#DC143C',
+    paddingTop: 50,
+    paddingBottom: 30,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   title: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#DC143C',
+    color: '#fff',
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 18,
+    color: '#fff',
+    opacity: 0.9,
     textAlign: 'center',
-    color: '#666',
-    marginBottom: 40,
   },
   form: {
+    flex: 2,
     backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
+    margin: 20,
+    marginTop: -20,
+    borderRadius: 20,
+    padding: 30,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 10,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  welcomeText: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  inputContainer: {
+    marginBottom: 20,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: '#e9ecef',
+    borderRadius: 12,
+    padding: 18,
     fontSize: 16,
+    backgroundColor: '#f8f9fa',
+    color: '#333',
+  },
+  forgotPasswordButton: {
+    alignSelf: 'flex-end',
+    marginBottom: 25,
+    marginTop: -10,
+  },
+  forgotPasswordText: {
+    color: '#DC143C',
+    fontSize: 14,
+    fontWeight: '500',
   },
   button: {
     backgroundColor: '#DC143C',
-    padding: 15,
-    borderRadius: 8,
+    padding: 18,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 20,
+    shadowColor: '#DC143C',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   buttonDisabled: {
     backgroundColor: '#ccc',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  linkButton: {
+  divider: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginVertical: 20,
   },
-  linkText: {
-    color: '#DC143C',
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e9ecef',
+  },
+  dividerText: {
+    marginHorizontal: 15,
+    color: '#6c757d',
     fontSize: 14,
+    fontWeight: '500',
   },
-  publicInfoButton: {
-    alignItems: 'center',
-    marginTop: 15,
-    padding: 10,
-    borderWidth: 1,
+  secondaryButton: {
+    borderWidth: 2,
     borderColor: '#DC143C',
-    borderRadius: 8,
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 15,
     backgroundColor: 'transparent',
   },
-  publicInfoText: {
+  secondaryButtonText: {
     color: '#DC143C',
     fontSize: 16,
     fontWeight: '600',
+  },
+  publicInfoButton: {
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 12,
+    backgroundColor: '#f8f9fa',
+  },
+  publicInfoText: {
+    color: '#6c757d',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 
