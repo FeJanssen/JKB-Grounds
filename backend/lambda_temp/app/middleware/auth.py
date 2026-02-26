@@ -35,7 +35,7 @@ async def no_auth_required() -> Dict[str, Any]:
             'name': 'CRM System Admin',
             'email': 'crm@system.local',
             'rolle_id': 1,
-            'verein_id': verein_id,  # ← ECHTE ID aus Datenbank
+            'verein_id': verein_id,  # ECHTE ID aus Datenbank
             'geschlecht': 'system',
             'ist_bestaetigt': True
         }

@@ -10,6 +10,25 @@ class PermissionToggleRequest(BaseModel):
     recht_key: str
     ist_aktiv: bool
 
+@router.get("/verein/{verein_id}")
+async def get_permissions_by_verein(verein_id: str):
+    """Berechtigungen für einen Verein laden - für ConfiguratorScreen"""
+    try:
+        print(f"🔐 Lade Berechtigungen für Verein: {verein_id}")
+        
+        response = supabase.table("recht").select("*").eq("verein_id", verein_id).execute()
+        
+        print(f"📊 Gefundene Berechtigungen: {len(response.data) if response.data else 0}")
+        
+        return {
+            "status": "success", 
+            "permissions": response.data or []
+        }
+        
+    except Exception as e:
+        print(f"❌ Fehler beim Laden der Berechtigungen: {e}")
+        raise HTTPException(status_code=500, detail="Fehler beim Laden der Berechtigungen")
+
 # ✅ NEU: Die Hauptfunktion für das Frontend Permission System
 @router.get("/rechte/{verein_id}/{rolle_id}")
 async def get_rechte(verein_id: str, rolle_id: str):
@@ -164,28 +183,64 @@ async def toggle_permission(request: PermissionToggleRequest):
     """Berechtigung umschalten"""
     try:
         print(f"🔄 Toggle Berechtigung: {request.recht_key} für Rolle {request.rolle_id}")
+        print(f"📋 Request Details: verein_id={request.verein_id}, rolle_id={request.rolle_id}, recht_key={request.recht_key}, ist_aktiv={request.ist_aktiv}")
+        
+        # Gültige Recht-Keys definieren (NUR die echten DB-Spalten!)
+        valid_rechte = {
+            'darf_buchen', 'darf_oeffentlich_buchen'
+        }
+        
+        if request.recht_key not in valid_rechte:
+            print(f"❌ Ungültiger Recht-Key: {request.recht_key}")
+            raise HTTPException(status_code=400, detail=f"Ungültiger Recht-Key: {request.recht_key}")
         
         # Prüfen ob Berechtigung existiert
+        print("🔍 Suche nach bestehender Berechtigung...")
         existing = supabase.table("recht").select("*").eq("verein_id", request.verein_id).eq("rolle_id", request.rolle_id).execute()
         
-        if existing.data:
+        # Update-Daten vorbereiten
+        update_data = {request.recht_key: request.ist_aktiv}
+        
+        if existing.data and len(existing.data) > 0:
             # Update bestehende Berechtigung
-            print("🔄 Update bestehende Berechtigung")
-            response = supabase.table("recht").update({
-                request.recht_key: request.ist_aktiv
-            }).eq("verein_id", request.verein_id).eq("rolle_id", request.rolle_id).execute()
+            print(f"🔄 Update bestehende Berechtigung für Rolle {request.rolle_id}")
+            response = supabase.table("recht").update(update_data).eq("verein_id", request.verein_id).eq("rolle_id", request.rolle_id).execute()
+            
+            if response.data:
+                print("✅ Berechtigung erfolgreich aktualisiert")
+            else:
+                print("⚠️  Update Response war leer")
+                
         else:
-            # Neue Berechtigung erstellen
-            print("➕ Erstelle neue Berechtigung")
-            response = supabase.table("recht").insert({
+            # Neue Berechtigung erstellen mit allen Standardwerten
+            print(f"➕ Erstelle neue Berechtigung für Rolle {request.rolle_id}")
+            insert_data = {
                 "verein_id": request.verein_id,
                 "rolle_id": request.rolle_id,
-                request.recht_key: request.ist_aktiv
-            }).execute()
+                "darf_buchen": False,
+                "darf_oeffentlich_buchen": False
+            }
+            # Den spezifischen Wert setzen
+            insert_data[request.recht_key] = request.ist_aktiv
+            
+            response = supabase.table("recht").insert(insert_data).execute()
+            
+            if response.data:
+                print("✅ Neue Berechtigung erfolgreich erstellt")
+            else:
+                print("❌ Insert Response war leer")
+                raise HTTPException(status_code=500, detail="Fehler beim Erstellen der Berechtigung")
         
-        print("✅ Berechtigung erfolgreich aktualisiert")
-        return {"status": "success", "message": "Berechtigung aktualisiert"}
+        return {
+            "status": "success", 
+            "message": f"Berechtigung '{request.recht_key}' für Rolle {request.rolle_id} {'aktiviert' if request.ist_aktiv else 'deaktiviert'}"
+        }
         
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"❌ Fehler beim Toggle der Berechtigung: {e}")
-        raise HTTPException(status_code=500, detail="Fehler beim Aktualisieren der Berechtigung")
+        print(f"❌ Unerwarteter Fehler beim Toggle der Berechtigung: {str(e)}")
+        print(f"🔍 Exception Type: {type(e).__name__}")
+        import traceback
+        print(f"📜 Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Unerwarteter Fehler beim Aktualisieren der Berechtigung: {str(e)}")

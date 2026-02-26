@@ -86,7 +86,7 @@ class CRMService:
             raise e
     
     @staticmethod
-    def approve_registration(supabase: Client, user_id: str, admin_verein_id: str) -> Dict[str, Any]:  # ← GEÄNDERT: str statt int
+    def approve_registration(supabase: Client, user_id: str, admin_verein_id: str) -> Dict[str, Any]:  # GEAENDERT: str statt int
         """Registrierung bestätigen"""
         try:
             user_response = supabase.table('nutzer').select('*').eq('id', user_id).eq('verein_id', admin_verein_id).eq('ist_bestaetigt', False).execute()
@@ -119,7 +119,7 @@ class CRMService:
             raise e
     
     @staticmethod
-    def reject_registration(supabase: Client, user_id: str, admin_verein_id: str) -> bool:  # ← GEÄNDERT: str statt int
+    def reject_registration(supabase: Client, user_id: str, admin_verein_id: str) -> bool:  # GEAENDERT: str statt int
         """Registrierung ablehnen und löschen"""
         try:
             user_response = supabase.table('nutzer').select('id').eq('id', user_id).eq('verein_id', admin_verein_id).eq('ist_bestaetigt', False).execute()
@@ -284,7 +284,7 @@ class CRMService:
             raise e
     
     @staticmethod
-    def get_role_name(supabase: Client, rolle_id: Optional[str]) -> str:  # ← GEÄNDERT: Optional[str]
+    def get_role_name(supabase: Client, rolle_id: Optional[str]) -> str:  # GEAENDERT: Optional[str]
         """Hole echten Rollennamen aus der Datenbank"""
         try:
             if not rolle_id:

@@ -53,6 +53,7 @@ export const API_ENDPOINTS = {
   
   BOOKINGS: {
     CREATE: '/api/bookings/create',
+    CREATE_SERIES: '/api/bookings/series',  // ← KORRIGIERT: Backend verwendet /series
     BY_DATE: (date, vereinId) => `/api/bookings/date/${date}?verein_id=${vereinId}`,
     DELETE: (bookingId) => `/api/bookings/${bookingId}`,
   },

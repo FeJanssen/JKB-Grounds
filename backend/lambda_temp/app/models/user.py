@@ -5,7 +5,7 @@ class UserCreate(BaseModel):
     name: str
     email: str
     password: str
-    verein_id: str
+    vereinsname: str  # Name des Vereins (wird zu verein_id aufgelöst)
     geschlecht: Optional[str] = None
 
 class UserLogin(BaseModel):

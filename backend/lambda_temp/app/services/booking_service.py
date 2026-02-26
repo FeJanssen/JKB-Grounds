@@ -11,7 +11,7 @@ class BookingService:
             print(f"🎯 Erstelle Buchung mit Daten: {booking_data}")
             
             # Validierung der Eingabedaten
-            required_fields = ["court_id", "date", "time", "duration", "type", "user_id"]
+            required_fields = ["platz_id", "date", "time", "duration", "type", "user_id"]
             missing_fields = [field for field in required_fields if field not in booking_data or booking_data[field] is None]
             
             if missing_fields:
@@ -23,7 +23,7 @@ class BookingService:
             
             # Verfügbarkeit prüfen
             is_available = await self.check_availability(
-                booking_data["court_id"],
+                booking_data["platz_id"],
                 booking_data["date"],
                 booking_data["time"],
                 booking_data["duration"]
@@ -36,18 +36,19 @@ class BookingService:
             end_time = self.calculate_end_time(booking_data["time"], booking_data["duration"])
             
             # Preis berechnen (marktreif)
-            price = self.calculate_price(booking_data["duration"], booking_data["court_id"])
+            price = self.calculate_price(booking_data["duration"], booking_data["platz_id"])
             
             # Buchung in DB speichern
             buchung = {
     "id": str(uuid.uuid4()),
-    "platz_id": booking_data["court_id"],  # ← KORRIGIERT: Als STRING, NICHT int()
+    "platz_id": booking_data["platz_id"],  # ✅ KORRIGIERT: Einheitlich platz_id verwenden
     "nutzer_id": booking_data["user_id"],
     "datum": booking_data["date"],
     "uhrzeit_von": booking_data["time"],
     "uhrzeit_bis": end_time,
     "buchungstyp": booking_data["type"],
     "notizen": booking_data.get("notes", ""),
+    "color": booking_data.get("color", None),  # ✅ NEU: Farbe für öffentliche Buchungen
     "status": "aktiv",
     "preis": price,
     "erstellt_am": datetime.now().isoformat(),
@@ -333,13 +334,9 @@ class BookingService:
                 print(f"❌ Buchung außerhalb der Öffnungszeiten: {hour}:xx")
                 return False
             
-            # Nicht mehr als 30 Tage im Voraus
+            # UNBEGRENZTE Buchungen in die Zukunft - keine Zeitbeschränkung!
             days_ahead = (booking_datetime - now).days
-            if days_ahead > 30:
-                print(f"❌ Buchung zu weit in der Zukunft: {days_ahead} Tage")
-                return False
-            
-            print(f"✅ Buchungszeit ist gültig: {booking_datetime}")
+            print(f"✅ Buchungszeit ist gültig: {booking_datetime} ({days_ahead} Tage im Voraus - UNBEGRENZT)")
             return True
             
         except Exception as e:

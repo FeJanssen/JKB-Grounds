@@ -411,7 +411,7 @@ const BookingCalendar = ({
       
       // ✅ SERIEN-BUCHUNG vs EINZEL-BUCHUNG: Wähle richtige API Route
       const isSeriesBooking = bookingData.is_recurring === true;
-      const endpoint = isSeriesBooking ? API_ENDPOINTS.BOOKINGS.SERIES : API_ENDPOINTS.BOOKINGS.CREATE;
+      const endpoint = isSeriesBooking ? API_ENDPOINTS.BOOKINGS.CREATE_SERIES : API_ENDPOINTS.BOOKINGS.CREATE;
       
       console.log(`📍 ${isSeriesBooking ? 'SERIEN-BUCHUNG' : 'EINZEL-BUCHUNG'} detected - using endpoint: ${endpoint}`);
       

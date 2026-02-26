@@ -373,7 +373,7 @@ const BookingModal = ({
                     <View style={styles.inputGroup}>
                       <Text style={styles.inputLabel}>Wie viele Wochen?</Text>
                       <View style={styles.weekOptions}>
-                        {[4, 8, 12, 16].map((weeks) => (
+                        {[4, 8, 12, 16, 20, 24, 28].map((weeks) => (
                           <TouchableOpacity
                             key={weeks}
                             style={[

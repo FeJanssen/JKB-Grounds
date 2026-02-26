@@ -19,9 +19,49 @@ class CourtsService:
             
             if response.data:
                 print(f"✅ DEBUG: {len(response.data)} Plätze gefunden für Verein {verein_id}")
+                
+                # Convert boolean booking fields to buchungszeiten array
+                courts = []
                 for court in response.data:
-                    print(f"   📋 Platz: {court.get('name')} - ID: {court.get('id')} - Verein: {court.get('verein_id')}")
-                return response.data
+                    court_dict = dict(court)
+                    
+                    # Convert boolean booking fields to buchungszeiten array
+                    buchungszeiten = []
+                    booking_times = [
+                        (15, court_dict.get('booking_15min', False)),
+                        (30, court_dict.get('booking_30min', True)),
+                        (45, court_dict.get('booking_45min', False)),
+                        (60, court_dict.get('booking_60min', True)),
+                        (75, court_dict.get('booking_75min', False)),
+                        (90, court_dict.get('booking_90min', True)),
+                        (105, court_dict.get('booking_105min', False)),
+                        (120, court_dict.get('booking_120min', True)),
+                        (135, court_dict.get('booking_135min', False)),
+                        (150, court_dict.get('booking_150min', False)),
+                        (165, court_dict.get('booking_165min', False)),
+                        (180, court_dict.get('booking_180min', False)),
+                        (195, court_dict.get('booking_195min', False)),
+                        (210, court_dict.get('booking_210min', False)),
+                        (225, court_dict.get('booking_225min', False)),
+                        (240, court_dict.get('booking_240min', False)),
+                        (300, court_dict.get('booking_300min', False)),
+                        (360, court_dict.get('booking_360min', False)),
+                        (480, court_dict.get('booking_480min', False)),
+                    ]
+                    
+                    for minutes, enabled in booking_times:
+                        if enabled:
+                            buchungszeiten.append(minutes)
+                    
+                    # Fallback zu Standard-Zeiten wenn keine Zeit aktiviert
+                    if not buchungszeiten:
+                        buchungszeiten = [30, 60, 90, 120]
+                    
+                    court_dict['buchungszeiten'] = buchungszeiten
+                    courts.append(court_dict)
+                    print(f"   📋 Platz: {court.get('name')} - ID: {court.get('id')} - Buchungszeiten: {buchungszeiten}")
+                
+                return courts
             else:
                 print(f"❌ DEBUG: Keine Plätze gefunden für Verein {verein_id}")
                 # Zusätzliche Debug-Info: Alle Plätze abrufen
@@ -42,7 +82,17 @@ class CourtsService:
             response = self.supabase.table("platz").select("*").eq("id", court_id).execute()
             
             if response.data and len(response.data) > 0:
-                return response.data[0]
+                court = dict(response.data[0])
+                # Parse buchungszeiten from JSON string to array
+                if 'buchungszeiten' in court and court['buchungszeiten']:
+                    try:
+                        import json
+                        court['buchungszeiten'] = json.loads(court['buchungszeiten'])
+                    except (json.JSONDecodeError, TypeError):
+                        court['buchungszeiten'] = [30, 60, 90, 120]
+                else:
+                    court['buchungszeiten'] = [30, 60, 90, 120]
+                return court
             else:
                 return None
                 

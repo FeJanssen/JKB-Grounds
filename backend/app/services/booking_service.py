@@ -334,13 +334,9 @@ class BookingService:
                 print(f"❌ Buchung außerhalb der Öffnungszeiten: {hour}:xx")
                 return False
             
-            # Nicht mehr als 30 Tage im Voraus
+            # UNBEGRENZTE Buchungen in die Zukunft - keine Zeitbeschränkung!
             days_ahead = (booking_datetime - now).days
-            if days_ahead > 30:
-                print(f"❌ Buchung zu weit in der Zukunft: {days_ahead} Tage")
-                return False
-            
-            print(f"✅ Buchungszeit ist gültig: {booking_datetime}")
+            print(f"✅ Buchungszeit ist gültig: {booking_datetime} ({days_ahead} Tage im Voraus - UNBEGRENZT)")
             return True
             
         except Exception as e:
