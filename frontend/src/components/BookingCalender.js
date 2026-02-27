@@ -445,7 +445,9 @@ const BookingCalendar = ({
       console.log('Backend Response Data:', data);
       
       if (response.ok && data.status === 'success') {
-        console.log('✅ Buchung erfolgreich!');
+        // ✅ SOFORTIGES NEULADEN der Buchungen
+        console.log('✅ Buchung erfolgreich, lade Buchungen neu...');
+        await loadBookingsForDate(selectedDate);
         
         // ✅ UNTERSCHIEDLICHE SUCCESS-NACHRICHTEN
         if (isSeriesBooking && data.summary) {
@@ -459,7 +461,7 @@ const BookingCalendar = ({
             [{ 
               text: 'OK', 
               onPress: () => {
-                console.log('✅ Serien-Buchung abgeschlossen, lade Buchungen neu...');
+                console.log('✅ Serien-Buchung Dialog OK gedrückt, lade Buchungen neu...');
                 loadBookingsForDate(selectedDate);
               }
             }]
@@ -471,7 +473,8 @@ const BookingCalendar = ({
             [{ 
               text: 'OK', 
               onPress: () => {
-                console.log('✅ Einzelbuchung abgeschlossen, lade Buchungen neu...');
+                // Nochmal laden zur Sicherheit
+                console.log('✅ Dialog OK gedrückt, lade nochmal...');
                 loadBookingsForDate(selectedDate);
               }
             }]
