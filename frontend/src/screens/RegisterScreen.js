@@ -214,6 +214,7 @@ const RegisterScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.form}>
+        <Text style={styles.welcomeText}>Konto erstellen</Text>
         <View style={styles.requiredFieldsNotice}>
           <Text style={styles.requiredFieldsText}>* Pflichtfelder</Text>
         </View>
@@ -460,43 +461,66 @@ const RegisterScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    header: {
-      paddingTop: 60,
-      paddingBottom: 30,
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
+      justifyContent: 'center',
       alignItems: 'center',
+      backgroundColor: '#DC143C',
+      paddingTop: 60,
+      paddingBottom: 40,
+      paddingHorizontal: 20,
+      borderBottomLeftRadius: 30,
+      borderBottomRightRadius: 30,
+      minHeight: 200,
     },
     title: {
-      fontSize: 28,
+      fontSize: 36,
       fontWeight: 'bold',
-      color: '#DC143C',
+      color: '#fff',
       marginBottom: 8,
+      textAlign: 'center',
     },
     subtitle: {
-      fontSize: 16,
-      color: '#666',
+      fontSize: 18,
+      color: '#fff',
+      opacity: 0.9,
+      textAlign: 'center',
     },
     form: {
       backgroundColor: '#fff',
       margin: 20,
-      padding: 20,
-      borderRadius: 10,
-      marginBottom: 80, // Extra Platz am Ende des Formulars
+      marginTop: -20,
+      borderRadius: 20,
+      padding: 30,
+      paddingBottom: 40,
       shadowColor: '#000',
       shadowOffset: {
         width: 0,
-        height: 2,
+        height: 10,
       },
-      shadowOpacity: 0.1,
-      shadowRadius: 3.84,
-      elevation: 5,
+      shadowOpacity: 0.15,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    welcomeText: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#333',
+      textAlign: 'center',
+      marginBottom: 10,
     },
     input: {
       borderWidth: 1,
-      borderColor: '#ddd',
-      borderRadius: 8,
-      padding: 15,
-      marginBottom: 15,
+      borderColor: '#e9ecef',
+      borderRadius: 12,
+      padding: 18,
+      marginBottom: 20,
       fontSize: 16,
+      backgroundColor: '#fff',
+      color: '#333',
     },
     requiredFieldsNotice: {
       marginBottom: 15,
@@ -543,14 +567,24 @@ const styles = StyleSheet.create({
     },
     button: {
       backgroundColor: '#DC143C',
-      padding: 15,
-      borderRadius: 8,
+      padding: 18,
+      borderRadius: 12,
       alignItems: 'center',
-      marginBottom: 15,
+      marginBottom: 20,
       marginTop: 10,
+      shadowColor: '#DC143C',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
     },
     buttonDisabled: {
       backgroundColor: '#ccc',
+      shadowOpacity: 0,
+      elevation: 0,
     },
     buttonText: {
       color: '#fff',
@@ -559,17 +593,19 @@ const styles = StyleSheet.create({
     },
     linkButton: {
       alignItems: 'center',
+      padding: 15,
     },
     linkText: {
       color: '#DC143C',
       fontSize: 14,
+      fontWeight: '600',
     },
     dropdownButton: {
       borderWidth: 1,
-      borderColor: '#ddd',
-      borderRadius: 8,
-      padding: 15,
-      marginBottom: 15,
+      borderColor: '#e9ecef',
+      borderRadius: 12,
+      padding: 18,
+      marginBottom: 20,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
@@ -619,11 +655,12 @@ const styles = StyleSheet.create({
     },
     searchInput: {
       borderWidth: 1,
-      borderColor: '#ddd',
-      borderRadius: 8,
-      padding: 15,
-      marginBottom: 15,
+      borderColor: '#e9ecef',
+      borderRadius: 12,
+      padding: 18,
+      marginBottom: 20,
       fontSize: 16,
+      backgroundColor: '#fff',
     },
     clubItem: {
       padding: 15,

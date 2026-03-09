@@ -7,6 +7,9 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ApiService from '../services/api';
@@ -132,22 +135,30 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header mit Gradient-Effekt */}
-      <View style={styles.header}>
-        <Text style={styles.title}>SV Hohenfurch</Text>
-        <Text style={styles.subtitle}>Tennis Buchung</Text>
-      </View>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header mit Gradient-Effekt */}
+        <View style={styles.header}>
+          <Text style={styles.title}>SV Hohenfurch</Text>
+          <Text style={styles.subtitle}>Tennis Buchung</Text>
+        </View>
 
-      {/* Login Form */}
-      <View style={styles.form}>
-        <Text style={styles.welcomeText}>Willkommen zurück!</Text>
-        
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="E-Mail Adresse"
-            placeholderTextColor="#999"
+        {/* Login Form */}
+        <View style={styles.form}>
+          <Text style={styles.welcomeText}>Willkommen zurück!</Text>
+          
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="E-Mail Adresse"
+              placeholderTextColor="#999"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -217,7 +228,8 @@ const LoginScreen = ({ navigation }) => {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
+  </KeyboardAvoidingView>
   );
 };
 
@@ -226,15 +238,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
+    minHeight: '100%',
+  },
   header: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#DC143C',
-    paddingTop: 50,
-    paddingBottom: 30,
+    paddingTop: 60,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
+    minHeight: 200,
   },
   title: {
     fontSize: 36,
@@ -250,12 +268,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   form: {
-    flex: 2,
     backgroundColor: '#fff',
     margin: 20,
     marginTop: -20,
     borderRadius: 20,
     padding: 30,
+    minHeight: 400,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
