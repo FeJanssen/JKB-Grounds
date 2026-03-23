@@ -16,11 +16,18 @@ import { useUser } from '../context/UserContext';
 import { API_BASE_URL } from '../config/baseUrl';
 import LegalModal from '../components/legal/LegalModal';
 import { exportUserData, deleteUserData, getDeletionPolicy } from '../utils/dataExport';
+import { groupBookingsIntoSeries, formatDateRange } from '../utils/bookingGrouping';
 
 const SettingsScreen = ({ changeTab }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userBookings, setUserBookings] = useState([]);
+  const [groupedBookings, setGroupedBookings] = useState({ series: [], individual: [] });
+  
+  // 🎨 SERIE CANCELLATION ANIMATION STATES
+  const [seriesCancelling, setSeriesCancelling] = useState(false);
+  const [cancelProgress, setCancelProgress] = useState({ current: 0, total: 0, currentName: '' });
+  
   const [userProfile, setUserProfile] = useState({
     id: null,
     name: '',
@@ -136,6 +143,11 @@ const SettingsScreen = ({ changeTab }) => {
         
         console.log('✅ Zukünftige Buchungen:', futureBookings.length);
         setUserBookings(futureBookings);
+        
+        // 📊 SERIE-GRUPPIERUNG
+        const grouped = groupBookingsIntoSeries(futureBookings);
+        setGroupedBookings(grouped);
+        console.log('📊 Gruppierte Buchungen:', grouped);
       } else {
         const errorText = await response.text();
         console.error('❌ API Error:', response.status, errorText);
@@ -149,6 +161,148 @@ const SettingsScreen = ({ changeTab }) => {
     setRefreshing(true);
     await loadUserData();
     setRefreshing(false);
+  };
+
+  // 🎯 SERIEN-FUNKTIONEN
+  const toggleSeries = (seriesId) => {
+    setGroupedBookings(prev => ({
+      ...prev,
+      series: prev.series.map(series => 
+        series.id === seriesId 
+          ? { ...series, isCollapsed: !series.isCollapsed }
+          : series
+      )
+    }));
+  };
+
+  const toggleSeriesSelection = (seriesId) => {
+    setGroupedBookings(prev => ({
+      ...prev,
+      series: prev.series.map(series => 
+        series.id === seriesId 
+          ? { ...series, allSelected: !series.allSelected }
+          : series
+      )
+    }));
+  };
+
+  const cancelSeries = async (series) => {
+    const confirmed = window.confirm(
+      `Möchten Sie die gesamte Serie "${series.name}" (${series.weeks} Termine) wirklich stornieren?`
+    );
+    
+    if (confirmed) {
+      // 🎨 ANIMATION STARTEN
+      setSeriesCancelling(true);
+      setCancelProgress({ current: 0, total: series.weeks, currentName: series.name });
+      
+      try {
+        console.log('🗑️ Storniere Serie:', series.name, '- IDs:', series.members.map(m => m.id));
+        
+        let successCount = 0;
+        let failedCount = 0;
+        const errors = [];
+        
+        // Storniere alle Einzelbuchungen der Serie (mit Progress Animation)
+        for (let i = 0; i < series.members.length; i++) {
+          const booking = series.members[i];
+          
+          // 🎯 PROGRESS UPDATE
+          setCancelProgress({ 
+            current: i + 1, 
+            total: series.weeks, 
+            currentName: `Woche ${i + 1}` 
+          });
+          
+          try {
+            await cancelBookingSilently(booking.id);
+            successCount++;
+            console.log(`✅ Buchung ${booking.id} storniert`);
+            
+            // Kleine Pause für sanfte Animation (optional)
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+          } catch (error) {
+            failedCount++;
+            errors.push(`Woche ${i + 1}: ${error.message}`);
+            console.error(`❌ Fehler bei Buchung ${booking.id}:`, error);
+          }
+        }
+        
+        // 🎨 ANIMATION BEENDEN
+        setSeriesCancelling(false);
+        
+        // Aktualisiere die Anzeige
+        await loadUserData();
+        
+        // 📊 ZUSAMMENFASSUNG statt Einzelmeldungen
+        if (failedCount === 0) {
+          window.alert(`✅ Serie "${series.name}" wurde erfolgreich storniert.\n\n${successCount} Termine wurden entfernt.`);
+        } else if (successCount > 0) {
+          window.alert(`⚠️ Serie "${series.name}" wurde teilweise storniert.\n\n✅ Erfolgreich: ${successCount} Termine\n❌ Fehlgeschlagen: ${failedCount} Termine\n\nFehler:\n${errors.join('\n')}`);
+        } else {
+          window.alert(`❌ Serie "${series.name}" konnte nicht storniert werden.\n\nAlle ${failedCount} Termine fehlgeschlagen:\n${errors.join('\n')}`);
+        }
+      } catch (error) {
+        console.error('❌ Fehler beim Stornieren der Serie:', error);
+        
+        // 🎨 ANIMATION BEENDEN auch bei Fehler
+        setSeriesCancelling(false);
+        
+        window.alert('Fehler beim Stornieren der Serie. Bitte versuchen Sie es erneut.');
+      }
+    }
+  };
+
+  // 🔇 STILLE STORNIERUNG für Serie (ohne Alert)
+  const cancelBookingSilently = async (bookingId) => {
+    // AsyncStorage importieren
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    
+    // User-ID für Authentifizierung holen
+    let userId = userProfile.id;
+    
+    if (!userId) {
+      userId = await AsyncStorage.getItem('userId') || 
+               await AsyncStorage.getItem('user_id') || 
+               await AsyncStorage.getItem('nutzer_id');
+    }
+    
+    if (!userId) {
+      throw new Error('Keine User-ID verfügbar');
+    }
+    
+    console.log('👤 Verwende User-ID für stille Stornierung:', userId);
+    
+    const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-ID': userId
+      }
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.text();
+      let errorMessage = 'Unbekannter Fehler';
+      
+      if (response.status === 404) {
+        errorMessage = 'Buchung nicht gefunden';
+      } else if (response.status === 401) {
+        errorMessage = 'Authentifizierung fehlgeschlagen';
+      } else if (response.status === 403) {
+        errorMessage = 'Keine Berechtigung';
+      } else if (response.status === 400) {
+        errorMessage = 'Kann nicht storniert werden';
+      } else {
+        errorMessage = `HTTP ${response.status}`;
+      }
+      
+      throw new Error(errorMessage);
+    }
+    
+    const result = await response.json();
+    return result;
   };
 
   const cancelBooking = (booking) => {
@@ -547,6 +701,59 @@ ${policy.neverDeleted.map(item => `• ${item}`).join('\n')}`;
         <Text style={styles.headerTitle}>Einstellungen</Text>
       </View>
 
+      {/* 🎨 SERIE CANCELLATION ANIMATION OVERLAY */}
+      {seriesCancelling && (
+        <View style={styles.cancelOverlay}>
+          <View style={styles.cancelModalContent}>
+            {/* Animated Header */}
+            <View style={styles.cancelHeader}>
+              <ActivityIndicator size="large" color="#DC143C" />
+              <Text style={styles.cancelTitle}>Serie wird storniert...</Text>
+            </View>
+            
+            {/* Progress Info */}
+            <View style={styles.progressInfo}>
+              <Text style={styles.progressSeries}>{cancelProgress.currentName}</Text>
+              <Text style={styles.progressCurrent}>
+                Storniere {cancelProgress.currentName}
+              </Text>
+              <Text style={styles.progressCounter}>
+                {cancelProgress.current} von {cancelProgress.total} Terminen
+              </Text>
+            </View>
+            
+            {/* Animated Progress Bar */}
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View 
+                  style={[
+                    styles.progressFill,
+                    { 
+                      width: `${(cancelProgress.current / cancelProgress.total) * 100}%`,
+                      backgroundColor: cancelProgress.current === cancelProgress.total ? '#4CAF50' : '#DC143C'
+                    }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.progressPercent}>
+                {Math.round((cancelProgress.current / cancelProgress.total) * 100)}%
+              </Text>
+            </View>
+            
+            {/* Fun Animation Elements */}
+            <View style={styles.animationContainer}>
+              <Text style={styles.animationEmoji}>🗑️</Text>
+              <Text style={styles.animationText}>
+                {cancelProgress.current === cancelProgress.total 
+                  ? "✅ Fertig!" 
+                  : "📅 Termine werden entfernt..."
+                }
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
+
       {/* CONTENT - WEB-KOMPATIBLES SCROLLING - Einfache ScrollView wie CRM */}
       <ScrollView 
         style={styles.scrollableContent}
@@ -564,11 +771,13 @@ ${policy.neverDeleted.map(item => `• ${item}`).join('\n')}`;
         <View style={styles.firstSectionHeader}>
           <View style={styles.sectionTitleContainer}>
             <Ionicons name="calendar-outline" size={20} color="#DC143C" style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>Meine Buchungen ({userBookings.length})</Text>
+            <Text style={styles.sectionTitle}>
+              Meine Buchungen ({groupedBookings.series.length + groupedBookings.individual.length})
+            </Text>
           </View>
         </View>
         
-        {userBookings.length === 0 ? (
+        {(groupedBookings.series.length === 0 && groupedBookings.individual.length === 0) ? (
           <View style={styles.fullWidthRow}>
             <View style={styles.rowContent}>
               <Ionicons name="calendar-outline" size={22} color="#DC143C" style={styles.rowIcon} />
@@ -585,27 +794,99 @@ ${policy.neverDeleted.map(item => `• ${item}`).join('\n')}`;
             </View>
           </View>
         ) : (
-          userBookings.map((booking) => (
-            <View key={booking.id} style={styles.fullWidthRow}>
-              <View style={styles.rowContent}>
-                <Ionicons name="tennisball" size={22} color="#DC143C" style={styles.rowIcon} />
-                <View style={styles.rowTexts}>
-                  <Text style={styles.rowTitle}>
-                    {booking.platz?.name || 'Platz ' + booking.platz_id}
-                  </Text>
-                  <Text style={styles.rowSubtitle}>
-                    {formatDate(booking.datum)} • {formatBookingTime(booking)}
-                  </Text>
+          <>
+            {/* 📊 SERIENBUCHUNGEN */}
+            {groupedBookings.series.map((series) => (
+              <View key={series.id}>
+                {/* Serie Header - Klappbar */}
+                <View style={styles.fullWidthRow}>
+                  <View style={styles.rowContent}>
+                    <TouchableOpacity 
+                      style={styles.seriesToggle}
+                      onPress={() => toggleSeries(series.id)}
+                    >
+                      <Ionicons 
+                        name={series.isCollapsed ? "chevron-forward" : "chevron-down"} 
+                        size={20} 
+                        color="#DC143C" 
+                      />
+                    </TouchableOpacity>
+                    <Ionicons name="repeat" size={22} color="#DC143C" style={styles.rowIcon} />
+                    <View style={styles.rowTexts}>
+                      <Text style={styles.rowTitle}>{series.name}</Text>
+                      <Text style={styles.rowSubtitle}>
+                        {series.weeks} Wochen • {formatDateRange(series.startDate, series.endDate)} • {series.time}
+                      </Text>
+                    </View>
+                    {/* Serie Aktionen */}
+                    <TouchableOpacity 
+                      style={[styles.selectButton, series.allSelected && styles.selectedButton]}
+                      onPress={() => toggleSeriesSelection(series.id)}
+                    >
+                      <Ionicons 
+                        name={series.allSelected ? "checkmark-circle" : "ellipse-outline"} 
+                        size={18} 
+                        color={series.allSelected ? "#fff" : "#DC143C"} 
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.cancelButton}
+                      onPress={() => cancelSeries(series)}
+                    >
+                      <Text style={styles.cancelButtonText}>×</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <TouchableOpacity 
-                  style={styles.cancelButton}
-                  onPress={() => cancelBooking(booking)}
-                >
-                  <Text style={styles.cancelButtonText}>×</Text>
-                </TouchableOpacity>
+
+                {/* Serie Details - Eingeklappt */}
+                {!series.isCollapsed && series.members.map((booking) => (
+                  <View key={booking.id} style={[styles.fullWidthRow, styles.seriesChild]}>
+                    <View style={styles.rowContent}>
+                      <View style={styles.seriesIndent} />
+                      <Ionicons name="tennisball-outline" size={18} color="#666" style={styles.rowIcon} />
+                      <View style={styles.rowTexts}>
+                        <Text style={[styles.rowTitle, styles.seriesChildTitle]}>
+                          Woche {series.members.indexOf(booking) + 1}
+                        </Text>
+                        <Text style={[styles.rowSubtitle, styles.seriesChildSubtitle]}>
+                          {formatDate(booking.datum)} • {formatBookingTime(booking)}
+                        </Text>
+                      </View>
+                      <TouchableOpacity 
+                        style={styles.cancelButton}
+                        onPress={() => cancelBooking(booking)}
+                      >
+                        <Text style={styles.cancelButtonText}>×</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
               </View>
-            </View>
-          ))
+            ))}
+
+            {/* 📋 EINZELBUCHUNGEN */}
+            {groupedBookings.individual.map((booking) => (
+              <View key={booking.id} style={styles.fullWidthRow}>
+                <View style={styles.rowContent}>
+                  <Ionicons name="tennisball" size={22} color="#DC143C" style={styles.rowIcon} />
+                  <View style={styles.rowTexts}>
+                    <Text style={styles.rowTitle}>
+                      {booking.platz?.name || 'Platz ' + booking.platz_id}
+                    </Text>
+                    <Text style={styles.rowSubtitle}>
+                      {formatDate(booking.datum)} • {formatBookingTime(booking)}
+                    </Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={styles.cancelButton}
+                    onPress={() => cancelBooking(booking)}
+                  >
+                    <Text style={styles.cancelButtonText}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </>
         )}
 
         {/* Profil Sektion - VOLLBREITE ZEILEN */}
@@ -1347,6 +1628,139 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#94a3b8',
     lineHeight: 18,
+  },
+  // 📊 SERIES BOOKING STYLES
+  seriesToggle: {
+    padding: 8,
+    marginRight: 8,
+  },
+  selectButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f0f0f0',
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  selectedButton: {
+    backgroundColor: '#DC143C',
+    borderColor: '#DC143C',
+  },
+  seriesChild: {
+    backgroundColor: '#f8f9fa',
+    borderLeftWidth: 3,
+    borderLeftColor: '#DC143C',
+    marginLeft: 20,
+  },
+  seriesIndent: {
+    width: 20,
+    marginRight: 8,
+  },
+  seriesChildTitle: {
+    fontSize: 14,
+    color: '#666',
+  },
+  seriesChildSubtitle: {
+    fontSize: 12,
+    color: '#999',
+  },
+  // 🎨 CANCELLATION ANIMATION STYLES
+  cancelOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  cancelModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 30,
+    margin: 20,
+    maxWidth: 350,
+    width: '90%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  cancelHeader: {
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  cancelTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 15,
+    textAlign: 'center',
+  },
+  progressInfo: {
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  progressSeries: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#DC143C',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  progressCurrent: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  progressCounter: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+  },
+  progressContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  progressBar: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 4,
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+    transition: 'width 0.3s ease-in-out',
+  },
+  progressPercent: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#DC143C',
+  },
+  animationContainer: {
+    alignItems: 'center',
+  },
+  animationEmoji: {
+    fontSize: 30,
+    marginBottom: 10,
+  },
+  animationText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });
 
