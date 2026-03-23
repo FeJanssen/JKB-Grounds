@@ -2,8 +2,12 @@ from app.database.connection import supabase
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 import uuid
+from app.services.gmail_service import GmailSMTPService
 
 class BookingService:
+    
+    def __init__(self):
+        self.gmail_service = GmailSMTPService()
     
     async def create_booking(self, booking_data: dict) -> dict:
         """Neue Buchung erstellen"""
@@ -62,6 +66,9 @@ class BookingService:
             if response.data:
                 created_booking = response.data[0]
                 print(f"✅ SUCCESS: Buchung erstellt - {created_booking['id']}")
+                
+                # 📧 E-Mail senden
+                await self.send_booking_confirmation_email(booking_data, created_booking)
                 
                 return {
                     "success": True,
@@ -281,11 +288,17 @@ class BookingService:
     def time_to_minutes(self, time_str: str) -> int:
         """Zeit-String zu Minuten konvertieren für Vergleiche"""
         try:
-            hours, minutes = map(int, time_str.split(':'))
-            return hours * 60 + minutes
+            # Zeitformat bereinigen: "15:00:00+00" -> "15:00"
+            cleaned_time = time_str.split(':')[:2]  # Nur Stunden und Minuten
+            hours = int(cleaned_time[0])
+            minutes = int(cleaned_time[1]) if len(cleaned_time) > 1 else 0
+            
+            result = hours * 60 + minutes
+            print(f"🔧 Zeit-Konvertierung: '{time_str}' -> {result} Minuten ({hours}:{minutes:02d})")
+            return result
         except Exception as e:
-            print(f"❌ ERROR bei Zeit-Konvertierung: {e}")
-            return 0
+            print(f"❌ ERROR bei Zeit-Konvertierung: {time_str} -> {e}")
+            return -1  # KRITISCH: -1 statt 0, damit Fehler erkennbar sind
     
     def calculate_price(self, duration_minutes: int, court_id: str = None) -> float:
         """Marktreife Preisberechnung"""
@@ -427,6 +440,50 @@ class BookingService:
             
             print(f"✅ Statistiken erstellt: {stats}")
             return stats
+            
+        except Exception as e:
+            print(f"❌ ERROR bei Statistik-Erstellung: {e}")
+            return {
+                "total_bookings": 0,
+                "active_bookings": 0,
+                "cancelled_bookings": 0,
+                "total_revenue": 0.0,
+                "popular_times": [],
+                "cancellation_rate": 0.0
+            }
+    
+    async def send_booking_confirmation_email(self, booking_data: dict, created_booking: dict):
+        """Sendet Buchungsbestätigungs-E-Mail"""
+        try:
+            # Test-E-Mail-Adresse für Demo (später durch echte User-E-Mail ersetzen)
+            recipient_email = booking_data.get("email", "test@example.com")
+            
+            # E-Mail-Details
+            email_booking_data = {
+                "date": booking_data["date"],
+                "time": booking_data["time"],
+                "duration": booking_data["duration"],
+                "platz_id": booking_data["platz_id"],
+                "type": booking_data["type"],
+                "booking_id": created_booking["id"]
+            }
+            
+            # E-Mail senden
+            success = await self.gmail_service.send_booking_confirmation(
+                recipient_email=recipient_email,
+                booking_details=email_booking_data,
+                user_name=booking_data.get("user_name", "Kunde")
+            )
+            
+            if success:
+                print(f"✅ E-Mail erfolgreich gesendet an {recipient_email}")
+            else:
+                print(f"⚠️ E-Mail konnte nicht gesendet werden an {recipient_email}")
+                
+        except Exception as e:
+            print(f"❌ E-Mail Fehler: {e}")
+            # E-Mail-Fehler sollen Buchung nicht verhindern
+            pass
             
         except Exception as e:
             print(f"❌ ERROR bei Statistik-Erstellung: {e}")

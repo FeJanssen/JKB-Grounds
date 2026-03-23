@@ -281,11 +281,17 @@ class BookingService:
     def time_to_minutes(self, time_str: str) -> int:
         """Zeit-String zu Minuten konvertieren für Vergleiche"""
         try:
-            hours, minutes = map(int, time_str.split(':'))
-            return hours * 60 + minutes
+            # Zeitformat bereinigen: "15:00:00+00" -> "15:00"
+            cleaned_time = time_str.split(':')[:2]  # Nur Stunden und Minuten
+            hours = int(cleaned_time[0])
+            minutes = int(cleaned_time[1]) if len(cleaned_time) > 1 else 0
+            
+            result = hours * 60 + minutes
+            print(f"🔧 Zeit-Konvertierung: '{time_str}' -> {result} Minuten ({hours}:{minutes:02d})")
+            return result
         except Exception as e:
-            print(f"❌ ERROR bei Zeit-Konvertierung: {e}")
-            return 0
+            print(f"❌ ERROR bei Zeit-Konvertierung: {time_str} -> {e}")
+            return -1  # KRITISCH: -1 statt 0, damit Fehler erkennbar sind
     
     def calculate_price(self, duration_minutes: int, court_id: str = None) -> float:
         """Marktreife Preisberechnung"""
