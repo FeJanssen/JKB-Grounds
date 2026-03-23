@@ -105,13 +105,15 @@ const BookingModal = ({
         duration: parseInt(duration),
         type: isPublic ? 'public' : 'private', // ✅ DYNAMISCH: Abhängig vom Toggle
         notes: notes || '',  // ✅ Leerer String falls keine Notizen
-        // ✅ NEU: Farbe für öffentliche Buchungen
+        // ✅ NEU: Farbe für öffentliche Buchungen (auch bei Serienbuchungen!)
         ...(isPublic && { color: selectedBookingColor }),
         // ✅ SERIEN-BUCHUNG INFO - Bei aktivierter Serien-Buchung (private UND public)
         ...(isRecurring && {
           is_recurring: true,
           recurring_weeks: recurringWeeks,
-          series_name: `${court.name} - ${getWeekdayName(selectedDate)} Training`
+          series_name: `${court.name} - ${getWeekdayName(selectedDate)} Training`,
+          // 🎨 WICHTIG: Farbe auch bei Serienbuchungen übertragen!
+          ...(isPublic && { color: selectedBookingColor })
         })
       };
 

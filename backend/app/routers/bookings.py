@@ -49,6 +49,7 @@ class SeriesBookingRequest(BaseModel):
     weeks: int  # Anzahl Wochen
     notes: Optional[str] = ""
     series_name: Optional[str] = ""  # Name für die Serie
+    color: Optional[str] = None  # ✅ NEU: Hex-Farbe für öffentliche Serienbuchungen
 
 class BookingResponse(BaseModel):
     """Enterprise Booking Response Model"""
@@ -395,6 +396,7 @@ async def create_series_booking(
                 "duration": request.duration,
                 "type": request.type,
                 "notes": f"{request.series_name} (Woche {week + 1}/{request.weeks})" if request.series_name else f"Serie - Woche {week + 1}/{request.weeks}",
+                "color": request.color if hasattr(request, 'color') else None,  # ✅ NEU: Farbe für Serienbuchung
                 "user_id": user_id
             }
             

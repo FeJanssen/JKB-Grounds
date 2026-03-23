@@ -426,7 +426,8 @@ const BookingCalendar = ({
           type: bookingData.type,
           notes: bookingData.notes,
           weeks: bookingData.recurring_weeks,
-          series_name: bookingData.series_name
+          series_name: bookingData.series_name,
+          color: bookingData.color  // ✅ NEU: Farbe für Serienbuchungen übertragen
         };
         console.log('🎯 SERIEN-BUCHUNG: Angepasste Datenstruktur:', JSON.stringify(requestData, null, 2));
       }
