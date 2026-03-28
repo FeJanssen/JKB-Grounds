@@ -20,15 +20,22 @@ const ResetPasswordScreen = ({ navigation, route }) => {
   const [verifying, setVerifying] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [debugInfo, setDebugInfo] = useState('');
 
   const token = route.params?.token;
 
   useEffect(() => {
+    setDebugInfo(`Token: ${token ? 'vorhanden' : 'fehlt'}`);
     verifyToken();
   }, []);
 
   const verifyToken = async () => {
+    console.log('🔍 ResetPasswordScreen - Token aus Params:', token);
+    setDebugInfo(prev => prev + '\nToken-Verifikation gestartet...');
+    
     if (!token) {
+      console.log('❌ Kein Token gefunden');
+      setDebugInfo(prev => prev + '\n❌ Kein Token gefunden');
       Alert.alert(
         'Ungültiger Link',
         'Dieser Link ist ungültig. Bitte fordern Sie einen neuen an.',
@@ -38,12 +45,21 @@ const ResetPasswordScreen = ({ navigation, route }) => {
     }
 
     try {
+      console.log('📡 Versuche Token zu verifizieren:', token);
+      setDebugInfo(prev => prev + '\n📡 API-Aufruf...');
+      
       const response = await ApiService.verifyResetToken(token);
+      console.log('📡 Token-Verifikation Response:', response);
+      setDebugInfo(prev => prev + '\n✅ Response erhalten');
       
       if (response.valid) {
+        console.log('✅ Token ist gültig, setze Zustand');
+        setDebugInfo(prev => prev + '\n✅ Token gültig - zeige Formular');
         setTokenValid(true);
         setUserEmail(response.email);
       } else {
+        console.log('❌ Token ist ungültig');
+        setDebugInfo(prev => prev + '\n❌ Token ungültig');
         Alert.alert(
           'Link abgelaufen',
           'Dieser Link ist abgelaufen oder wurde bereits verwendet. Bitte fordern Sie einen neuen an.',
@@ -51,12 +67,16 @@ const ResetPasswordScreen = ({ navigation, route }) => {
         );
       }
     } catch (error) {
+      console.log('❌ Token-Verifikation Fehler:', error);
+      setDebugInfo(prev => prev + `\n❌ Fehler: ${error.message}`);
       Alert.alert(
         'Fehler',
-        'Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut.',
+        `Es ist ein Fehler aufgetreten: ${error.message}. Bitte versuchen Sie es später erneut.`,
         [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
       );
     } finally {
+      console.log('🏁 Token-Verifikation abgeschlossen');
+      setDebugInfo(prev => prev + '\n🏁 Verifikation abgeschlossen');
       setVerifying(false);
     }
   };
@@ -108,13 +128,33 @@ const ResetPasswordScreen = ({ navigation, route }) => {
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#DC143C" />
         <Text style={styles.loadingText}>Link wird überprüft...</Text>
+        <Text style={styles.debugText}>Token: {token}</Text>
+        <Text style={styles.debugText}>{debugInfo}</Text>
       </View>
     );
   }
 
+  // DEBUG: Zeige aktuellen Zustand
+  console.log('🎯 Current State:', { verifying, tokenValid, userEmail, debugInfo });
+
   if (!tokenValid) {
-    return null; // Alert wurde bereits angezeigt
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text style={styles.errorText}>Token ist ungültig</Text>
+        <Text style={styles.debugText}>Token: {token}</Text>
+        <Text style={styles.debugText}>{debugInfo}</Text>
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={() => navigation.navigate('Login')}
+        >
+          <Text style={styles.buttonText}>Zur Anmeldung</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
+
+  // DEBUG: Wenn wir hier sind, sollte das Formular gezeigt werden
+  console.log('🎯 Zeige Formular! TokenValid:', tokenValid);
 
   return (
     <KeyboardAvoidingView 
@@ -130,6 +170,16 @@ const ResetPasswordScreen = ({ navigation, route }) => {
         <View style={styles.header}>
           <Text style={styles.title}>Neues Passwort</Text>
           <Text style={styles.subtitle}>JKB Tennisclub</Text>
+        </View>
+
+        {/* DEBUG INFO */}
+        <View style={styles.debugContainer}>
+          <Text style={styles.debugText}>DEBUG INFO:</Text>
+          <Text style={styles.debugText}>Token: {token || 'Kein Token'}</Text>
+          <Text style={styles.debugText}>Token Valid: {tokenValid ? 'JA' : 'NEIN'}</Text>
+          <Text style={styles.debugText}>Verifying: {verifying ? 'JA' : 'NEIN'}</Text>
+          <Text style={styles.debugText}>Email: {userEmail || 'Keine Email'}</Text>
+          <Text style={styles.debugText}>{debugInfo}</Text>
         </View>
 
         {/* Form */}
@@ -308,6 +358,24 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 16,
     color: '#666',
+  },
+  debugText: {
+    marginTop: 10,
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#DC143C',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  debugContainer: {
+    backgroundColor: '#f0f0f0',
+    margin: 10,
+    padding: 10,
+    borderRadius: 5,
   },
 });
 
