@@ -50,7 +50,9 @@ const ResetPasswordScreen = ({ navigation, route }) => {
       
       const response = await ApiService.verifyResetToken(token);
       console.log('📡 Token-Verifikation Response:', response);
-      setDebugInfo(prev => prev + '\n✅ Response erhalten');
+      console.log('📡 Response.valid:', response.valid);
+      console.log('📡 Response JSON:', JSON.stringify(response, null, 2));
+      setDebugInfo(prev => prev + `\n✅ Response: ${JSON.stringify(response)}`);
       
       if (response.valid) {
         console.log('✅ Token ist gültig, setze Zustand');
