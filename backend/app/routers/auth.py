@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from app.models.user import UserCreate, UserLogin, Token
+from app.models.user import UserCreate, UserLogin, Token, PasswordResetRequest, PasswordReset
 from app.services.auth_service import auth_service
 
 router = APIRouter(
@@ -141,4 +141,58 @@ async def get_user_data(user_id: str):
         raise HTTPException(
             status_code=500, 
             detail=f"Server-Fehler: {str(e)}"
+        )
+
+@router.post("/request-password-reset")
+async def request_password_reset(request: PasswordResetRequest):
+    """Passwort-Reset anfordern"""
+    try:
+        result = await auth_service.request_password_reset(request.email)
+        if result:
+            return {"message": "Falls diese E-Mail-Adresse bei uns registriert ist, haben Sie eine Anleitung zum Zurücksetzen Ihres Passworts erhalten."}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Fehler beim Senden der Reset-E-Mail"
+            )
+    except Exception as e:
+        print(f"Password reset request error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Interner Serverfehler"
+        )
+
+@router.post("/verify-reset-token")
+async def verify_reset_token(token: str):
+    """Reset-Token verifizieren"""
+    try:
+        user_data = await auth_service.verify_reset_token(token)
+        if user_data:
+            return {"valid": True, "email": user_data["email"]}
+        else:
+            return {"valid": False, "message": "Token ungültig oder abgelaufen"}
+    except Exception as e:
+        print(f"Token verification error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Interner Serverfehler"
+        )
+
+@router.post("/reset-password")
+async def reset_password(reset_data: PasswordReset):
+    """Passwort mit Token zurücksetzen"""
+    try:
+        result = await auth_service.reset_password(reset_data.token, reset_data.new_password)
+        if result:
+            return {"message": "Passwort erfolgreich zurückgesetzt"}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Token ungültig oder abgelaufen"
+            )
+    except Exception as e:
+        print(f"Password reset error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Interner Serverfehler"
         )

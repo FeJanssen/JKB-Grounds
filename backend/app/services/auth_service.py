@@ -1,5 +1,7 @@
 import os
 import bcrypt
+import secrets
+import uuid
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
@@ -184,6 +186,135 @@ class AuthService:
         except Exception as e:
             print(f"Login-Fehler: {e}")
             raise e
+
+    async def request_password_reset(self, email: str) -> bool:
+        """Passwort-Reset anfordern"""
+        try:
+            print(f"DEBUG RESET: Passwort-Reset angefordert für: {email}")
+            
+            # Prüfen ob Benutzer existiert
+            result = supabase.table("nutzer").select("*").eq("email", email).execute()
+            
+            if not result.data:
+                print(f"DEBUG RESET: Benutzer nicht gefunden")
+                # Aus Sicherheitsgründen trotzdem true zurückgeben
+                return True
+            
+            user = result.data[0]
+            user_id = user["id"]
+            
+            # Reset-Token generieren
+            reset_token = str(uuid.uuid4())
+            expires_at = datetime.utcnow() + timedelta(hours=1)  # 1 Stunde gültig
+            
+            print(f"DEBUG RESET: Token generiert: {reset_token}")
+            
+            # Token in DB speichern (oder updaten)
+            # Erst prüfen ob bereits ein Token existiert
+            existing_token = supabase.table("password_reset_tokens").select("*").eq("user_id", user_id).execute()
+            
+            if existing_token.data:
+                # Update existierender Token
+                supabase.table("password_reset_tokens").update({
+                    "token": reset_token,
+                    "expires_at": expires_at.isoformat(),
+                    "used": False
+                }).eq("user_id", user_id).execute()
+            else:
+                # Neuer Token
+                supabase.table("password_reset_tokens").insert({
+                    "user_id": user_id,
+                    "token": reset_token,
+                    "expires_at": expires_at.isoformat(),
+                    "used": False
+                }).execute()
+            
+            # Email senden
+            from app.services.gmail_service import gmail_service
+            await gmail_service.send_password_reset_email(email, user["name"], reset_token)
+            
+            print(f"DEBUG RESET: Reset-Email gesendet an {email}")
+            return True
+            
+        except Exception as e:
+            print(f"Passwort-Reset Fehler: {e}")
+            raise e
+
+    async def verify_reset_token(self, token: str) -> Optional[dict]:
+        """Reset-Token verifizieren"""
+        try:
+            print(f"DEBUG RESET: Verifiziere Token: {token}")
+            
+            # Token aus DB holen
+            result = supabase.table("password_reset_tokens").select("*").eq("token", token).execute()
+            
+            if not result.data:
+                print(f"DEBUG RESET: Token nicht gefunden")
+                return None
+            
+            token_data = result.data[0]
+            
+            # Prüfen ob Token bereits verwendet wurde
+            if token_data["used"]:
+                print(f"DEBUG RESET: Token bereits verwendet")
+                return None
+            
+            # Prüfen ob Token noch gültig ist
+            expires_at = datetime.fromisoformat(token_data["expires_at"])
+            if datetime.utcnow() > expires_at:
+                print(f"DEBUG RESET: Token abgelaufen")
+                return None
+            
+            # Benutzer-Daten holen
+            user_result = supabase.table("nutzer").select("*").eq("id", token_data["user_id"]).execute()
+            
+            if not user_result.data:
+                print(f"DEBUG RESET: Benutzer nicht gefunden")
+                return None
+            
+            user = user_result.data[0]
+            print(f"DEBUG RESET: Token gültig für Benutzer: {user['email']}")
+            
+            return {
+                "user_id": user["id"],
+                "email": user["email"],
+                "name": user["name"]
+            }
+            
+        except Exception as e:
+            print(f"Token-Verifikation Fehler: {e}")
+            return None
+
+    async def reset_password(self, token: str, new_password: str) -> bool:
+        """Passwort mit Token zurücksetzen"""
+        try:
+            print(f"DEBUG RESET: Setze Passwort zurück mit Token: {token}")
+            
+            # Token verifizieren
+            user_data = await self.verify_reset_token(token)
+            if not user_data:
+                print(f"DEBUG RESET: Token ungültig")
+                return False
+            
+            # Neues Passwort hashen
+            hashed_password = self.hash_password(new_password)
+            
+            # Passwort in DB aktualisieren
+            supabase.table("nutzer").update({
+                "passwort": hashed_password
+            }).eq("id", user_data["user_id"]).execute()
+            
+            # Token als verwendet markieren
+            supabase.table("password_reset_tokens").update({
+                "used": True
+            }).eq("token", token).execute()
+            
+            print(f"DEBUG RESET: Passwort erfolgreich zurückgesetzt für: {user_data['email']}")
+            return True
+            
+        except Exception as e:
+            print(f"Passwort-Reset Fehler: {e}")
+            return False
 
 
 # Service-Instanz erstellen

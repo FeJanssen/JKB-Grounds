@@ -127,11 +127,7 @@ const LoginScreen = ({ navigation }) => {
   };
 
   const handleForgotPassword = () => {
-    Alert.alert(
-      'Passwort vergessen',
-      'Diese Funktion wird in einer zukünftigen Version verfügbar sein.',
-      [{ text: 'OK' }]
-    );
+    navigation.navigate('ForgotPassword');
   };
 
   return (

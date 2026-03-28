@@ -4,6 +4,7 @@
     "slug": "jkb-grounds",
     "version": "1.0.0",
     "orientation": "portrait",
+    "scheme": "jkbgrounds",
     "platforms": [
       "ios",
       "android",
@@ -17,7 +18,21 @@
       }
     },
     "android": {
-      "package": "com.fejanssen.jkbgrounds"
+      "package": "com.fejanssen.jkbgrounds",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "jkbgrounds"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "extra": {
       "eas": {

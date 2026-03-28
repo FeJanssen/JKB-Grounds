@@ -376,6 +376,87 @@ async createBooking(bookingData) {
       throw error;
     }
   }
+
+  // 🔑 PASSWORT-RESET FUNKTIONEN
+  async requestPasswordReset(email) {
+    try {
+      console.log('🔑 Passwort-Reset anfordern für:', email);
+      
+      const response = await fetch(`${API_MAIN_URL}/auth/auth/request-password-reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('✅ Passwort-Reset Email gesendet');
+        return data;
+      } else {
+        throw new Error(data.detail || 'Reset-Email konnte nicht gesendet werden');
+      }
+    } catch (error) {
+      console.error('❌ Password Reset Request Error:', error);
+      throw error;
+    }
+  }
+
+  async verifyResetToken(token) {
+    try {
+      console.log('🔍 Token verifizieren:', token);
+      
+      const response = await fetch(`${API_MAIN_URL}/auth/auth/verify-reset-token?token=${token}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('✅ Token-Verifikation erfolgreich:', data);
+        return data;
+      } else {
+        throw new Error(data.detail || 'Token-Verifikation fehlgeschlagen');
+      }
+    } catch (error) {
+      console.error('❌ Token Verification Error:', error);
+      throw error;
+    }
+  }
+
+  async resetPassword(token, newPassword) {
+    try {
+      console.log('🔒 Passwort zurücksetzen mit Token:', token);
+      
+      const response = await fetch(`${API_MAIN_URL}/auth/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          new_password: newPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('✅ Passwort erfolgreich zurückgesetzt');
+        return data;
+      } else {
+        throw new Error(data.detail || 'Passwort konnte nicht zurückgesetzt werden');
+      }
+    } catch (error) {
+      console.error('❌ Password Reset Error:', error);
+      throw error;
+    }
+  }
 }
 
 export default new ApiService();
