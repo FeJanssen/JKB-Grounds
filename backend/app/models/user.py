@@ -5,8 +5,7 @@ class UserCreate(BaseModel):
     name: str
     email: str
     password: str
-    verein_id: str
-    vereinspasswort: str  # Wird zur Verifikation verwendet
+    vereinsname: str  # Name des Vereins statt ID
     geschlecht: Optional[str] = None
 
 class UserLogin(BaseModel):

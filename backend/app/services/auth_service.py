@@ -73,9 +73,12 @@ class AuthService:
     async def register_user(self, user_data: UserCreate) -> Optional[Token]:
         """Neuen Benutzer registrieren"""
         try:
-            # Vereinspasswort überprüfen
-            if not await self.verify_club_password(user_data.verein_id, user_data.vereinspasswort):
-                raise ValueError("Ungültiges Vereinspasswort")
+            # Verein anhand des Namens finden
+            verein_result = supabase.table("verein").select("id").eq("name", user_data.vereinsname).execute()
+            if not verein_result.data:
+                raise ValueError(f"Verein '{user_data.vereinsname}' nicht gefunden")
+            
+            verein_id = verein_result.data[0]["id"]
 
             # Passwort hashen
             hashed_password = self.hash_password(user_data.password)
@@ -94,7 +97,7 @@ class AuthService:
                 "passwort": hashed_password,
                 "ist_bestaetigt": False,  # Benötigt Admin-Freigabe
                 "rolle_id": rolle_id,
-                "verein_id": user_data.verein_id,
+                "verein_id": verein_id,
                 "geschlecht": user_data.geschlecht
             }
 
@@ -205,9 +208,13 @@ class AuthService:
             
             # Reset-Token generieren
             reset_token = str(uuid.uuid4())
-            expires_at = datetime.utcnow() + timedelta(hours=1)  # 1 Stunde gültig
+            
+            # Zeitzone-bewusste Zeitstempel-Erstellung
+            from datetime import timezone
+            expires_at = datetime.now(timezone.utc) + timedelta(hours=1)  # 1 Stunde gültig
             
             print(f"DEBUG RESET: Token generiert: {reset_token}")
+            print(f"DEBUG RESET: Expires at: {expires_at}")
             
             # Token in DB speichern (oder updaten)
             # Erst prüfen ob bereits ein Token existiert
@@ -260,8 +267,22 @@ class AuthService:
                 return None
             
             # Prüfen ob Token noch gültig ist
-            expires_at = datetime.fromisoformat(token_data["expires_at"])
-            if datetime.utcnow() > expires_at:
+            expires_at_str = token_data["expires_at"]
+            print(f"DEBUG RESET: expires_at string: {expires_at_str}")
+            
+            # Zeitzone-bewusste Datumsvergleichung
+            from datetime import timezone
+            
+            if expires_at_str.endswith('Z'):
+                expires_at_str = expires_at_str.rstrip('Z') + '+00:00'
+            
+            expires_at = datetime.fromisoformat(expires_at_str)
+            current_time = datetime.now(timezone.utc)
+            
+            print(f"DEBUG RESET: expires_at: {expires_at}")
+            print(f"DEBUG RESET: current_time: {current_time}")
+            
+            if current_time > expires_at:
                 print(f"DEBUG RESET: Token abgelaufen")
                 return None
             

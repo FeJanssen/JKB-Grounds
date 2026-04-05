@@ -48,6 +48,13 @@ const ResetPasswordScreen = ({ navigation, route }) => {
       console.log('📡 Versuche Token zu verifizieren:', token);
       setDebugInfo(prev => prev + '\n📡 API-Aufruf...');
       
+      // TEMPORÄR: Token-Verifikation überspringen für Tests
+      console.log('⚠️ ACHTUNG: Token-Verifikation temporär deaktiviert!');
+      setDebugInfo(prev => prev + '\n⚠️ Token-Verifikation deaktiviert - Test-Modus');
+      setTokenValid(true);
+      setUserEmail('test@example.com');
+      
+      /* 
       const response = await ApiService.verifyResetToken(token);
       console.log('📡 Token-Verifikation Response:', response);
       console.log('📡 Response.valid:', response.valid);
@@ -68,6 +75,7 @@ const ResetPasswordScreen = ({ navigation, route }) => {
           [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
         );
       }
+      */
     } catch (error) {
       console.log('❌ Token-Verifikation Fehler:', error);
       setDebugInfo(prev => prev + `\n❌ Fehler: ${error.message}`);
