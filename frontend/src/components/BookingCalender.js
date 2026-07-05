@@ -515,6 +515,37 @@ const BookingCalendar = ({
     setSelectedBooking(null);
   };
 
+  // ✅ NEUE FUNKTION: Prüfe ob eine Zeitlinie für diesen Slot angezeigt werden soll
+  const getCurrentTimeIndicator = (timeSlot) => {
+    // Nur heute anzeigen
+    const today = new Date();
+    const isToday = selectedDate.toDateString() === today.toDateString();
+    
+    if (!isToday) return null;
+    
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    
+    // Parse timeSlot (Format: "HH:MM")
+    const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
+    const slotStartInMinutes = slotHour * 60 + slotMinute;
+    const slotEndInMinutes = slotStartInMinutes + 30; // 30-Minuten-Slots
+    
+    // Prüfe ob aktuelle Zeit in diesem Slot liegt
+    if (currentTimeInMinutes >= slotStartInMinutes && currentTimeInMinutes < slotEndInMinutes) {
+      // Berechne Position innerhalb des Slots (0-100%)
+      const positionInSlot = ((currentTimeInMinutes - slotStartInMinutes) / 30) * 100;
+      return {
+        position: positionInSlot,
+        time: `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`
+      };
+    }
+    
+    return null;
+  };
+
   return (
     <View style={styles.container} key={renderKey}>
       {/* ✅ Navigation wurde ins BookingScreen verschoben */}
@@ -535,7 +566,10 @@ const BookingCalendar = ({
         </View>
 
         {/* Time Rows */}
-        {timeSlots.map((timeSlot) => (
+        {timeSlots.map((timeSlot) => {
+          const currentTimeIndicator = getCurrentTimeIndicator(timeSlot);
+          
+          return (
           <View key={timeSlot} style={styles.timeRow}>
             <View style={styles.timeCell}>
               <Text style={styles.timeText}>{timeSlot}</Text>
@@ -625,8 +659,26 @@ const BookingCalendar = ({
                 </TouchableOpacity>
               );
             })}
+            
+            {/* ✅ AKTUELLE UHRZEIT INDIKATOR - SCHÖNE BLASE MIT ZEIT */}
+            {currentTimeIndicator !== null && (
+              <View 
+                style={[
+                  styles.currentTimeIndicatorContainer,
+                  { top: `${currentTimeIndicator.position}%` }
+                ]}
+              >
+                {/* Zeit-Blase links */}
+                <View style={styles.currentTimeBubble}>
+                  <Text style={styles.currentTimeBubbleText}>{currentTimeIndicator.time}</Text>
+                </View>
+                {/* Linie */}
+                <View style={styles.currentTimeLine} />
+              </View>
+            )}
           </View>
-        ))}
+        );
+        })}
       </View>
 
       {/* Footer */}
@@ -894,6 +946,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    position: 'relative', // ✅ Für absolute Positionierung des Indikators
+  },
+  // ✅ AKTUELLE UHRZEIT INDIKATOR STYLES - SCHÖNE BLASE
+  currentTimeIndicatorContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 10,
+    pointerEvents: 'none', // Lässt Klicks durch
+  },
+  currentTimeBubble: {
+    backgroundColor: '#4A4A4A',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 16, // ✅ Etwas mehr Abstand für optische Zentrierung in der Zeit-Spalte
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  currentTimeBubbleText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  currentTimeLine: {
+    flex: 1,
+    height: 3,
+    backgroundColor: '#4A4A4A',
+    marginLeft: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
   },
   timeCell: {
     width: 80,

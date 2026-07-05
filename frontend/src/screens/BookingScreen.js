@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -26,12 +26,70 @@ const BookingScreen = ({ navigation }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [courtStartIndex, setCourtStartIndex] = useState(0);
   
+  // ✅ REF für Auto-Scroll zu aktueller Zeit
+  const scrollViewRef = useRef(null);
+  const [shouldScrollToTime, setShouldScrollToTime] = useState(false);
+  
   // ✅ CONSTANTS
   const COURTS_PER_VIEW = 3;
 
   useEffect(() => {
     initializeScreen();
   }, []);
+
+  // ✅ Markiere dass wir scrollen müssen wenn Courts geladen sind
+  useEffect(() => {
+    if (courts.length > 0) {
+      setShouldScrollToTime(true);
+    }
+  }, [courts]);
+
+  const scrollToCurrentTime = () => {
+    if (!scrollViewRef.current || courts.length === 0) return;
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
+    // Finde die früheste buchbare Zeit aus den Courts
+    let earliestHour = 7;
+    courts.forEach(court => {
+      if (court.buchbar_von) {
+        const startHour = parseInt(court.buchbar_von.split(':')[0]);
+        earliestHour = Math.min(earliestHour, startHour);
+      }
+    });
+    
+    // Berechne Anzahl der 30-Minuten-Slots bis zur aktuellen Zeit
+    const slotsFromStart = (currentHour - earliestHour) * 2 + Math.floor(currentMinute / 30);
+    
+    // Jeder Slot ist ca. 60px hoch (50px cell + 10px spacing schätzung)
+    const SLOT_HEIGHT = 60;
+    const HEADER_HEIGHT = 50; // Header mit Platznamen
+    
+    // Scroll-Position berechnen - zentriere die aktuelle Zeit wenn möglich
+    const scrollPosition = Math.max(0, (slotsFromStart * SLOT_HEIGHT) - 150);
+    
+    console.log(`⏰ Auto-Scroll: Aktuelle Zeit ${currentHour}:${currentMinute}, scrolle zu Position ${scrollPosition}`);
+    
+    // ✅ WICHTIG: animated: false = Kein Scroll-Animation, direkt auf Position springen
+    scrollViewRef.current.scrollTo({
+      y: scrollPosition,
+      animated: false
+    });
+    
+    setShouldScrollToTime(false);
+  };
+
+  // ✅ Handler wenn ScrollView fertig gelayoutet ist
+  const handleScrollViewLayout = () => {
+    if (shouldScrollToTime) {
+      // Kurzer Delay damit BookingCalendar auch fertig gerendert ist
+      setTimeout(() => {
+        scrollToCurrentTime();
+      }, 100);
+    }
+  };
 
   const initializeScreen = async () => {
     try {
@@ -340,8 +398,10 @@ const BookingScreen = ({ navigation }) => {
 
       {/* ✅ CONTENT - MIT ScrollView für korrekte Web-Scroll-Behandlung */}
       <ScrollView 
+        ref={scrollViewRef}
         style={styles.scrollableContent}
         showsVerticalScrollIndicator={false}
+        onLayout={handleScrollViewLayout}
       >
         <BookingCalendar 
           courts={visibleCourts} 
