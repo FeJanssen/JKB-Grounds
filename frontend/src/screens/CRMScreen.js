@@ -249,22 +249,43 @@ const CRMScreen = () => {
     );
   };
 
-  // APPROVE REGISTRATION - Backend Integration
+  // APPROVE REGISTRATION - Backend Integration - WEB-KOMPATIBEL
   const handleApproveRegistration = async (id) => {
-    try {
-      setLoading(true);
-      console.log('✅ Bestätige Registrierung:', id);
-      
-      await crmService.approveRegistration(id);
-      Alert.alert('Erfolg', 'Registrierung wurde bestätigt');
-      
-      // Reload data
-      await loadInitialData();
-    } catch (error) {
-      console.error('❌ Fehler beim Bestätigen:', error);
-      Alert.alert('Fehler', 'Registrierung konnte nicht bestätigt werden: ' + error.message);
-    } finally {
-      setLoading(false);
+    if (Platform.OS === 'web') {
+      try {
+        setLoading(true);
+        console.log('✅ Bestätige Registrierung:', id);
+        
+        await crmService.approveRegistration(id);
+        
+        // Reload data
+        await loadInitialData();
+        
+        window.alert('Registrierung wurde bestätigt');
+      } catch (error) {
+        console.error('❌ Fehler beim Bestätigen:', error);
+        window.alert('Registrierung konnte nicht bestätigt werden: ' + error.message);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Native App
+      try {
+        setLoading(true);
+        console.log('✅ Bestätige Registrierung:', id);
+        
+        await crmService.approveRegistration(id);
+        
+        // Reload data
+        await loadInitialData();
+        
+        Alert.alert('Erfolg', 'Registrierung wurde bestätigt');
+      } catch (error) {
+        console.error('❌ Fehler beim Bestätigen:', error);
+        Alert.alert('Fehler', 'Registrierung konnte nicht bestätigt werden: ' + error.message);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -280,10 +301,11 @@ const CRMScreen = () => {
         console.log('❌ Lehne Registrierung ab:', id);
         
         await crmService.rejectRegistration(id);
-        window.alert('Registrierung wurde abgelehnt');
         
         // Reload data
         await loadInitialData();
+        
+        window.alert('Registrierung wurde abgelehnt');
       } catch (error) {
         console.error('❌ Fehler beim Ablehnen:', error);
         window.alert('Registrierung konnte nicht abgelehnt werden: ' + error.message);
@@ -306,10 +328,11 @@ const CRMScreen = () => {
                 console.log('❌ Lehne Registrierung ab:', id);
                 
                 await crmService.rejectRegistration(id);
-                Alert.alert('Erfolg', 'Registrierung wurde abgelehnt');
                 
                 // Reload data
                 await loadInitialData();
+                
+                Alert.alert('Erfolg', 'Registrierung wurde abgelehnt');
               } catch (error) {
                 console.error('❌ Fehler beim Ablehnen:', error);
                 Alert.alert('Fehler', 'Registrierung konnte nicht abgelehnt werden: ' + error.message);
@@ -839,10 +862,18 @@ const CRMScreen = () => {
         presentationStyle="pageSheet"
       >
         <View style={styles.modalContainer}>
+          {/* LOADING OVERLAY FÜR MODAL */}
+          {loading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color="#DC143C" />
+              <Text style={styles.loadingText}>Verarbeite...</Text>
+            </View>
+          )}
+          
           <View style={styles.modalHeader}>
             <View />
             <Text style={styles.modalTitle}>Neue Registrierungen</Text>
-            <TouchableOpacity onPress={() => setRegistrationsModal(false)}>
+            <TouchableOpacity onPress={() => setRegistrationsModal(false)} disabled={loading}>
               <Text style={styles.modalCancel}>Schließen</Text>
             </TouchableOpacity>
           </View>
