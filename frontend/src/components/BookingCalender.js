@@ -665,7 +665,11 @@ const BookingCalendar = ({
               <View 
                 style={[
                   styles.currentTimeIndicatorContainer,
-                  { top: `${currentTimeIndicator.position}%` }
+                  { 
+                    // ✅ WICHTIG: Pixel statt Prozent für bessere Browser-Kompatibilität
+                    // minHeight der bookingCell ist 50px, Position ist 0-100%
+                    top: (currentTimeIndicator.position / 100) * 50 
+                  }
                 ]}
               >
                 {/* Zeit-Blase links */}
