@@ -379,13 +379,13 @@ const RegisterScreen = ({ navigation }) => {
             
             <TextInput
               style={styles.searchInput}
-              placeholder="Verein suchen... (z.B. 'SV Hoh' für SV Hohenfurch)"
+              placeholder="Verein suchen... (z.B. 'TC Musterstadt')"
               value={clubSearchText}
               onChangeText={filterClubs}
             />
 
             {loadingClubs ? (
-              <ActivityIndicator size="large" color="#DC143C" style={styles.loadingIndicator} />
+              <ActivityIndicator size="large" color="#4A4A4A" style={styles.loadingIndicator} />
             ) : (
               <FlatList
                 data={filteredClubs}
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
   header: {
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: '#DC143C',
+      backgroundColor: '#4A4A4A',
       paddingTop: 60,
       paddingBottom: 40,
       paddingHorizontal: 20,
@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
     infoBox: {
       backgroundColor: '#e8f4f8',
       borderLeftWidth: 4,
-      borderLeftColor: '#DC143C',
+      borderLeftColor: '#4A4A4A',
       padding: 15,
       marginBottom: 20,
       borderRadius: 5,
@@ -566,13 +566,13 @@ const styles = StyleSheet.create({
       lineHeight: 20,
     },
     button: {
-      backgroundColor: '#DC143C',
+      backgroundColor: '#4A4A4A',
       padding: 18,
       borderRadius: 12,
       alignItems: 'center',
       marginBottom: 20,
       marginTop: 10,
-      shadowColor: '#DC143C',
+      shadowColor: '#4A4A4A',
       shadowOffset: {
         width: 0,
         height: 4,
@@ -596,7 +596,7 @@ const styles = StyleSheet.create({
       padding: 15,
     },
     linkText: {
-      color: '#DC143C',
+      color: '#4A4A4A',
       fontSize: 14,
       fontWeight: '600',
     },
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
     modalTitle: {
       fontSize: 20,
       fontWeight: 'bold',
-      color: '#DC143C',
+      color: '#4A4A4A',
     },
     modalCloseButton: {
       padding: 5,
@@ -769,7 +769,7 @@ const styles = StyleSheet.create({
     errorModalTitle: {
       fontSize: 20,
       fontWeight: 'bold',
-      color: '#DC143C',
+      color: '#4A4A4A',
       textAlign: 'center',
     },
     errorModalMessage: {
@@ -780,7 +780,7 @@ const styles = StyleSheet.create({
       lineHeight: 22,
     },
     errorModalButton: {
-      backgroundColor: '#DC143C',
+      backgroundColor: '#4A4A4A',
       paddingHorizontal: 40,
       paddingVertical: 12,
       borderRadius: 25,
@@ -828,8 +828,8 @@ const styles = StyleSheet.create({
       backgroundColor: '#fff',
     },
     checkboxChecked: {
-      backgroundColor: '#DC143C',
-      borderColor: '#DC143C',
+      backgroundColor: '#4A4A4A',
+      borderColor: '#4A4A4A',
     },
     checkmark: {
       color: '#fff',
@@ -843,7 +843,7 @@ const styles = StyleSheet.create({
       flex: 1,
     },
     linkText: {
-      color: '#DC143C',
+      color: '#4A4A4A',
       textDecorationLine: 'underline',
       fontWeight: '500',
     },

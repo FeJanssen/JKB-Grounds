@@ -157,13 +157,13 @@ const HomeScreen = ({ changeTab }) => {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>SV Hohenfurch</Text>
+          <Text style={styles.title}>JKB Grounds</Text>
           <Text style={styles.subtitle}>{getTodayDate()}</Text>
         </View>
         
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#DC143C" />
-          <Text style={{ marginTop: 16, fontSize: 16, color: '#DC143C', fontWeight: '600' }}>
+          <ActivityIndicator size="large" color="#4A4A4A" />
+          <Text style={{ marginTop: 16, fontSize: 16, color: '#4A4A4A', fontWeight: '600' }}>
             Lade Dashboard-Daten...
           </Text>
         </View>
@@ -175,7 +175,7 @@ const HomeScreen = ({ changeTab }) => {
     <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <Text style={styles.title}>SV Hohenfurch</Text>
+        <Text style={styles.title}>JKB Grounds</Text>
         <Text style={styles.subtitle}>{getTodayDate()}</Text>
       </View>
 
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#DC143C',
+    backgroundColor: '#4A4A4A',
     padding: 20,
     paddingTop: 10,
     paddingBottom: 10,
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#DC143C',
+    color: '#4A4A4A',
   },
   statLabel: {
     fontSize: 14,
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   quickAccessTitle: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: '#DC143C',
+    color: '#4A4A4A',
   },
   quickAccessSubtitle: {
     fontSize: 13,
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   },
   quickAccessArrow: {
     fontSize: 20,
-    color: '#DC143C',
+    color: '#4A4A4A',
     fontWeight: 'bold',
   },
 });

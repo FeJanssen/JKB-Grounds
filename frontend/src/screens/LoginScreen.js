@@ -142,8 +142,8 @@ const LoginScreen = ({ navigation }) => {
       >
         {/* Header mit Gradient-Effekt */}
         <View style={styles.header}>
-          <Text style={styles.title}>SV Hohenfurch</Text>
-          <Text style={styles.subtitle}>Tennis Buchung</Text>
+          <Text style={styles.title}>JKB Grounds</Text>
+          <Text style={styles.subtitle}>Court Management</Text>
         </View>
 
         {/* Login Form */}
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   header: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#DC143C',
+    backgroundColor: '#4A4A4A',
     paddingTop: 60,
     paddingBottom: 40,
     paddingHorizontal: 20,
@@ -304,17 +304,17 @@ const styles = StyleSheet.create({
     marginTop: -10,
   },
   forgotPasswordText: {
-    color: '#DC143C',
+    color: '#4A4A4A',
     fontSize: 14,
     fontWeight: '500',
   },
   button: {
-    backgroundColor: '#DC143C',
+    backgroundColor: '#4A4A4A',
     padding: 18,
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#DC143C',
+    shadowColor: '#4A4A4A',
     shadowOffset: {
       width: 0,
       height: 4,
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     borderWidth: 2,
-    borderColor: '#DC143C',
+    borderColor: '#4A4A4A',
     padding: 18,
     borderRadius: 12,
     alignItems: 'center',
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   secondaryButtonText: {
-    color: '#DC143C',
+    color: '#4A4A4A',
     fontSize: 16,
     fontWeight: '600',
   },
