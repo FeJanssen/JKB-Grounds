@@ -45,7 +45,7 @@ export const APP_CONFIG = {
 // API Endpoints - dynamisch basierend auf BASE_URL
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: '/api/auth/auth/login',  // ← KORRIGIERT: Doppelte auth für Lambda-Kompatibilität
+    LOGIN: '/api/auth/auth/login',  // Doppeltes /auth/ für Backend-Kompatibilität
     REGISTER: '/api/auth/register',
     USER: (userId) => `/api/auth/user/${userId}`,
     ROLE: (userId) => `/api/users/${userId}/role`,

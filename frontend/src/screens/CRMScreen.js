@@ -268,36 +268,59 @@ const CRMScreen = () => {
     }
   };
 
-  // REJECT REGISTRATION - Backend Integration
+  // REJECT REGISTRATION - Backend Integration - WEB-KOMPATIBEL
   const handleRejectRegistration = async (id) => {
-    Alert.alert(
-      'Registrierung ablehnen',
-      'Möchten Sie diese Registrierung wirklich ablehnen?',
-      [
-        { text: 'Abbrechen', style: 'cancel' },
-        { 
-          text: 'Ablehnen', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              console.log('❌ Lehne Registrierung ab:', id);
-              
-              await crmService.rejectRegistration(id);
-              Alert.alert('Erfolg', 'Registrierung wurde abgelehnt');
-              
-              // Reload data
-              await loadInitialData();
-            } catch (error) {
-              console.error('❌ Fehler beim Ablehnen:', error);
-              Alert.alert('Fehler', 'Registrierung konnte nicht abgelehnt werden: ' + error.message);
-            } finally {
-              setLoading(false);
+    // WEB-KOMPATIBLE LÖSUNG: Browser confirm() nutzen
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Möchten Sie diese Registrierung wirklich ablehnen?');
+      if (!confirmed) return;
+      
+      try {
+        setLoading(true);
+        console.log('❌ Lehne Registrierung ab:', id);
+        
+        await crmService.rejectRegistration(id);
+        window.alert('Registrierung wurde abgelehnt');
+        
+        // Reload data
+        await loadInitialData();
+      } catch (error) {
+        console.error('❌ Fehler beim Ablehnen:', error);
+        window.alert('Registrierung konnte nicht abgelehnt werden: ' + error.message);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Native App: Alert.alert nutzen
+      Alert.alert(
+        'Registrierung ablehnen',
+        'Möchten Sie diese Registrierung wirklich ablehnen?',
+        [
+          { text: 'Abbrechen', style: 'cancel' },
+          { 
+            text: 'Ablehnen', 
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                setLoading(true);
+                console.log('❌ Lehne Registrierung ab:', id);
+                
+                await crmService.rejectRegistration(id);
+                Alert.alert('Erfolg', 'Registrierung wurde abgelehnt');
+                
+                // Reload data
+                await loadInitialData();
+              } catch (error) {
+                console.error('❌ Fehler beim Ablehnen:', error);
+                Alert.alert('Fehler', 'Registrierung konnte nicht abgelehnt werden: ' + error.message);
+              } finally {
+                setLoading(false);
+              }
             }
           }
-        }
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const handleEditUser = (user) => {
