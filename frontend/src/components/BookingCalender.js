@@ -16,6 +16,7 @@ import { buildApiUrl, API_ENDPOINTS, APP_CONFIG } from '../config/constants';
 
 const BookingCalendar = ({ 
   courts = [], 
+  allCourts = [],  // ✅ NEU: Alle verfügbaren Plätze für Multi-Buchung
   canBookPublic = false, 
   vereinId = null, 
   userId = null,
@@ -721,6 +722,8 @@ const BookingCalendar = ({
         canBookPublic={canBookPublic}
         vereinId={vereinId}
         userId={userId}  // ✅ User-ID an Modal weiterleiten
+        availableCourts={allCourts.length > 0 ? allCourts : courts}  // ✅ NEU: Alle Plätze für Multi-Buchung (Fallback auf courts wenn allCourts leer)
+        existingBookings={bookings}  // ✅ NEU: Aktuelle Buchungen zum Prüfen ob Plätze verfügbar sind
       />
 
       {/* ✅ NOTIZEN-MODAL */}

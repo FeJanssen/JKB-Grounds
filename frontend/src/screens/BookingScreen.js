@@ -405,6 +405,7 @@ const BookingScreen = ({ navigation }) => {
       >
         <BookingCalendar 
           courts={visibleCourts} 
+          allCourts={courts}  // ✅ NEU: Alle Plätze für Multi-Buchung
           onBooking={handleBooking}
           canBookPublic={canBookPublic()}
           vereinId={currentVereinId}

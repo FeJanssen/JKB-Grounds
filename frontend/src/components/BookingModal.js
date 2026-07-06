@@ -20,12 +20,18 @@ const BookingModal = ({
   onConfirmBooking,
   canBookPublic = false,  // ✅ Permission-Prop
   vereinId = null,  // ✅ Dynamische Verein-ID
-  userId = null  // ✅ NEU: Dynamische User-ID
+  userId = null,  // ✅ NEU: Dynamische User-ID
+  availableCourts = [],  // ✅ NEU: Alle verfügbaren Plätze für Multi-Buchung
+  existingBookings = []  // ✅ NEU: Aktuelle Buchungen zum Prüfen der Verfügbarkeit
 }) => {
   const [duration, setDuration] = useState('60');
   const [isPublic, setIsPublic] = useState(false);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // ✅ NEU: MULTI-BUCHUNG STATE
+  const [isMultiBooking, setIsMultiBooking] = useState(false);
+  const [selectedCourts, setSelectedCourts] = useState([]);
   
   // ✅ NEU: COLOR-PICKER für öffentliche Buchungen
   const [selectedBookingColor, setSelectedBookingColor] = useState('#4CAF50'); // Default grün
@@ -95,33 +101,77 @@ const BookingModal = ({
         return;
       }
 
+      // ✅ VALIDIERUNG: Multi-Buchung muss mind. 1 Platz ausgewählt haben
+      if (isMultiBooking && selectedCourts.length === 0) {
+        Alert.alert('Fehler', 'Bitte wählen Sie mindestens einen Platz für die Multi-Buchung aus.');
+        return;
+      }
+
       setLoading(true);
 
-      // ✅ KORREKTE API-STRUKTUR mit SERIEN-BUCHUNG
-      const bookingData = {
-        platz_id: court.id,  // ✅ Korrigiert: platz_id statt court_id (Backend erwartet platz_id)
-        date: selectedDate, // ✅ Sollte bereits im Format YYYY-MM-DD sein
-        time: selectedTime, // ✅ Änderung: Ohne :00 (Backend fügt das hinzu)
-        duration: parseInt(duration),
-        type: isPublic ? 'public' : 'private', // ✅ DYNAMISCH: Abhängig vom Toggle
-        notes: notes || '',  // ✅ Leerer String falls keine Notizen
-        // ✅ NEU: Farbe für öffentliche Buchungen (auch bei Serienbuchungen!)
-        ...(isPublic && { color: selectedBookingColor }),
-        // ✅ SERIEN-BUCHUNG INFO - Bei aktivierter Serien-Buchung (private UND public)
-        ...(isRecurring && {
-          is_recurring: true,
-          recurring_weeks: recurringWeeks,
-          series_name: `${court.name} - ${getWeekdayName(selectedDate)} Training`,
-          // 🎨 WICHTIG: Farbe auch bei Serienbuchungen übertragen!
-          ...(isPublic && { color: selectedBookingColor })
-        })
-      };
+      // ✅ MULTI-BUCHUNG: Erstelle Buchungen für mehrere Plätze
+      if (isMultiBooking && selectedCourts.length > 0) {
+        console.log(`📤 MULTI-BUCHUNG: Erstelle ${selectedCourts.length} Buchungen auf Plätzen:`, selectedCourts);
+        
+        const bookingPromises = selectedCourts.map(courtId => {
+          const bookingData = {
+            platz_id: courtId,
+            date: selectedDate,
+            time: selectedTime,
+            duration: parseInt(duration),
+            type: isPublic ? 'public' : 'private',
+            notes: notes || '',
+            ...(isPublic && { color: selectedBookingColor }),
+            ...(isRecurring && {
+              is_recurring: true,
+              recurring_weeks: recurringWeeks,
+              series_name: `Multi-Buchung - ${getWeekdayName(selectedDate)} Training`,
+              ...(isPublic && { color: selectedBookingColor })
+            })
+          };
+          
+          console.log(`📤 Buchung für Platz ${courtId}:`, bookingData);
+          return onConfirmBooking(bookingData);
+        });
+        
+        try {
+          await Promise.all(bookingPromises);
+          Alert.alert(
+            'Multi-Buchung erfolgreich!',
+            `${selectedCourts.length} Plätze wurden erfolgreich gebucht.`
+          );
+        } catch (error) {
+          Alert.alert(
+            'Multi-Buchung teilweise fehlgeschlagen',
+            'Einige Buchungen konnten nicht erstellt werden. Bitte prüfen Sie die Buchungsübersicht.'
+          );
+          throw error;
+        }
+      } else {
+        // ✅ NORMALE EINZEL-BUCHUNG (nur der aktuell ausgewählte Platz)
+        const bookingData = {
+          platz_id: court.id,
+          date: selectedDate,
+          time: selectedTime,
+          duration: parseInt(duration),
+          type: isPublic ? 'public' : 'private',
+          notes: notes || '',
+          ...(isPublic && { color: selectedBookingColor }),
+          ...(isRecurring && {
+            is_recurring: true,
+            recurring_weeks: recurringWeeks,
+            series_name: `${court.name} - ${getWeekdayName(selectedDate)} Training`,
+            ...(isPublic && { color: selectedBookingColor })
+          })
+        };
 
-      console.log('📤 BookingModal: FINALE Buchungsdaten:', JSON.stringify(bookingData, null, 2));
-      console.log('📤 BookingModal: User-ID:', userId);
-      console.log('📤 BookingModal: Verein-ID:', vereinId);
+        console.log('📤 BookingModal: FINALE Buchungsdaten:', JSON.stringify(bookingData, null, 2));
+        console.log('📤 BookingModal: User-ID:', userId);
+        console.log('📤 BookingModal: Verein-ID:', vereinId);
 
-      await onConfirmBooking(bookingData);
+        await onConfirmBooking(bookingData);
+      }
+      
       onClose();
       
       // Reset Form
@@ -130,6 +180,8 @@ const BookingModal = ({
       setNotes('');
       setIsRecurring(false);
       setRecurringWeeks(8);
+      setIsMultiBooking(false);
+      setSelectedCourts([]);
       
     } catch (error) {
       Alert.alert('Buchungsfehler', error.message);
@@ -155,6 +207,61 @@ const BookingModal = ({
     return date.toLocaleDateString('de-DE', { weekday: 'long' });
   };
 
+  // ✅ NEU: Prüfe ob ein Platz zum gewählten Zeitpunkt bereits gebucht ist
+  const isCourtBookedAtTime = (courtId, time, durationMinutes) => {
+    if (!Array.isArray(existingBookings) || existingBookings.length === 0) {
+      return false;
+    }
+
+    const [requestHour, requestMinute] = time.split(':').map(Number);
+    const requestStart = requestHour * 60 + requestMinute;
+    const requestEnd = requestStart + parseInt(durationMinutes);
+
+    return existingBookings.some(booking => {
+      // Prüfe ob die Buchung für diesen Platz ist
+      if (booking.platz_id !== courtId && booking.platz_id != courtId) {
+        return false;
+      }
+
+      // Parse Buchungszeiten
+      if (!booking.uhrzeit_von || !booking.uhrzeit_bis) {
+        return false;
+      }
+
+      const bookingStart = booking.uhrzeit_von.substring(0, 5);
+      const bookingEnd = booking.uhrzeit_bis.substring(0, 5);
+      
+      const [bookingStartHour, bookingStartMinute] = bookingStart.split(':').map(Number);
+      const [bookingEndHour, bookingEndMinute] = bookingEnd.split(':').map(Number);
+      
+      const bookingStartInMinutes = bookingStartHour * 60 + bookingStartMinute;
+      const bookingEndInMinutes = bookingEndHour * 60 + bookingEndMinute;
+
+      // Prüfe Überschneidung
+      return (requestStart < bookingEndInMinutes && requestEnd > bookingStartInMinutes);
+    });
+  };
+
+  // ✅ NEU: Multi-Buchung Hilfsfunktionen
+  const toggleCourtSelection = (courtId) => {
+    setSelectedCourts(prev => {
+      if (prev.includes(courtId)) {
+        return prev.filter(id => id !== courtId);
+      } else {
+        return [...prev, courtId];
+      }
+    });
+  };
+
+  const selectAllCourts = () => {
+    const allCourtIds = availableCourts.map(c => c.id);
+    setSelectedCourts(allCourtIds);
+  };
+
+  const deselectAllCourts = () => {
+    setSelectedCourts([]);
+  };
+
   // ✅ Automatisch private setzen wenn keine öffentliche Berechtigung
   React.useEffect(() => {
     if (!canBookPublic && isPublic) {
@@ -162,11 +269,21 @@ const BookingModal = ({
     }
   }, [canBookPublic]);
 
+  // ✅ Reset Multi-Buchung wenn isPublic deaktiviert wird
+  React.useEffect(() => {
+    if (!isPublic) {
+      setIsMultiBooking(false);
+      setSelectedCourts([]);
+    }
+  }, [isPublic]);
+
   // ✅ Reset Serien-Buchung wenn Modal schließt
   React.useEffect(() => {
     if (!visible) {
       setIsRecurring(false);
       setRecurringWeeks(8);
+      setIsMultiBooking(false);
+      setSelectedCourts([]);
     }
   }, [visible]);
 
@@ -291,6 +408,104 @@ const BookingModal = ({
                 </View>
               </View>
             </View>
+
+            {/* ✅ NEU: MULTI-BUCHUNG - Nur bei öffentlicher Buchung */}
+            {isPublic && availableCourts.length > 1 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>🏟️ Multi-Buchung</Text>
+                
+                <View style={styles.switchContainer}>
+                  <View style={styles.switchOption}>
+                    <View style={styles.switchTextContainer}>
+                      <Text style={styles.switchLabel}>
+                        {isMultiBooking ? '✅ Multi-Buchung aktiv' : '➕ Mehrere Plätze buchen'}
+                      </Text>
+                      <Text style={styles.switchDescription}>
+                        {isMultiBooking 
+                          ? `${selectedCourts.length} Platz${selectedCourts.length !== 1 ? 'e' : ''} ausgewählt`
+                          : 'Buchen Sie mehrere Plätze gleichzeitig'
+                        }
+                      </Text>
+                    </View>
+                    <View style={styles.switchWrapper}>
+                      <Switch
+                        value={isMultiBooking}
+                        onValueChange={setIsMultiBooking}
+                        trackColor={{ false: '#ccc', true: '#4A4A4A' }}
+                        thumbColor={'#fff'}
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                {/* ✅ PLATZ-AUSWAHL bei aktivierter Multi-Buchung */}
+                {isMultiBooking && (
+                  <View style={styles.multiBookingContainer}>
+                    <View style={styles.multiBookingActions}>
+                      <TouchableOpacity 
+                        style={styles.selectAllButton}
+                        onPress={selectAllCourts}
+                      >
+                        <Text style={styles.selectAllButtonText}>✓ Alle auswählen</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.deselectAllButton}
+                        onPress={deselectAllCourts}
+                      >
+                        <Text style={styles.deselectAllButtonText}>✗ Alle abwählen</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.courtsGrid}>
+                      {availableCourts.map(availableCourt => {
+                        const isSelected = selectedCourts.includes(availableCourt.id);
+                        const isCurrentCourt = availableCourt.id === court.id;
+                        const isBooked = isCourtBookedAtTime(availableCourt.id, selectedTime, duration);
+                        
+                        return (
+                          <TouchableOpacity
+                            key={availableCourt.id}
+                            style={[
+                              styles.courtSelectButton,
+                              isSelected && styles.courtSelectButtonActive,
+                              isCurrentCourt && styles.courtSelectButtonCurrent,
+                              isBooked && styles.courtSelectButtonBooked  // ✅ NEU: Ausgegraut wenn gebucht
+                            ]}
+                            onPress={() => !isBooked && toggleCourtSelection(availableCourt.id)}  // ✅ NEU: Nur klickbar wenn nicht gebucht
+                            disabled={isBooked}  // ✅ NEU: Deaktiviert wenn gebucht
+                          >
+                            <Text style={[
+                              styles.courtSelectButtonText,
+                              isSelected && styles.courtSelectButtonTextActive,
+                              isBooked && styles.courtSelectButtonTextBooked  // ✅ NEU: Graue Schrift wenn gebucht
+                            ]}>
+                              {availableCourt.name}
+                            </Text>
+                            {isCurrentCourt && !isBooked && (
+                              <Text style={styles.currentCourtLabel}>Aktuell</Text>
+                            )}
+                            {isBooked && (
+                              <Text style={styles.bookedLabel}>🔒 Belegt</Text>
+                            )}
+                            {isSelected && !isBooked && (
+                              <Text style={styles.courtSelectCheckmark}>✓</Text>
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+
+                    {selectedCourts.length > 0 && (
+                      <View style={styles.multiBookingInfo}>
+                        <Text style={styles.multiBookingInfoText}>
+                          📋 {selectedCourts.length} Platz{selectedCourts.length !== 1 ? 'e' : ''} wird/werden gebucht
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </View>
+            )}
 
             {/* ✅ COLOR-PICKER - Nur bei öffentlicher Buchung */}
             {isPublic && (
@@ -798,6 +1013,117 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 1,
+  },
+  // ✅ MULTI-BUCHUNG STYLES
+  multiBookingContainer: {
+    marginTop: 15,
+  },
+  multiBookingActions: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    gap: 10,
+  },
+  selectAllButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    backgroundColor: '#4A4A4A',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  selectAllButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  deselectAllButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  deselectAllButtonText: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  courtsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  courtSelectButton: {
+    flexBasis: '48%',
+    paddingVertical: 15,
+    paddingHorizontal: 12,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  courtSelectButtonActive: {
+    backgroundColor: '#e8f5e9',
+    borderColor: '#4A4A4A',
+  },
+  courtSelectButtonCurrent: {
+    borderColor: '#2196F3',
+    borderStyle: 'dashed',
+  },
+  courtSelectButtonBooked: {
+    backgroundColor: '#f5f5f5',
+    borderColor: '#ccc',
+    opacity: 0.6,
+  },
+  courtSelectButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#666',
+  },
+  courtSelectButtonTextActive: {
+    color: '#4A4A4A',
+  },
+  courtSelectButtonTextBooked: {
+    color: '#999',
+    textDecorationLine: 'line-through',
+  },
+  currentCourtLabel: {
+    fontSize: 10,
+    color: '#2196F3',
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  bookedLabel: {
+    fontSize: 10,
+    color: '#999',
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  courtSelectCheckmark: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    fontSize: 18,
+    color: '#4A4A4A',
+    fontWeight: 'bold',
+  },
+  multiBookingInfo: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#e3f2fd',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4A4A4A',
+  },
+  multiBookingInfoText: {
+    fontSize: 14,
+    color: '#4A4A4A',
+    fontWeight: '600',
   },
 });
 
